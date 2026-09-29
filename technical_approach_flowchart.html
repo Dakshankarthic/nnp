@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS-SAR — Technical Approach Flowchart (SIH 2025)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* 16:9 Presentation Slide Canvas */
+    .slide-canvas {
+      width: 1280px;
+      height: 720px;
+      background: #ffffff;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 36px;
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px dashed #334155;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .brand-logo svg {
+      width: 28px;
+      height: 28px;
+      fill: #0284c7;
+    }
+
+    .slide-title {
+      font-family: 'Merriweather', serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: #1e3a8a;
+      letter-spacing: 0.5px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sih-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sih-text {
+      text-align: right;
+      line-height: 1.15;
+    }
+
+    .sih-title {
+      font-size: 13px;
+      font-weight: 900;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+    }
+
+    .sih-year {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ea580c;
+    }
+
+    /* Main Diagram Grid Area */
+    .diagram-body {
+      flex: 1;
+      position: relative;
+      display: flex;
+    }
+
+    /* Dashed Card Styles (Exact SIH Style) */
+    .dashed-card {
+      background: #f0f7ff;
+      border: 2px dashed #1e293b;
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: absolute;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      z-index: 2;
+    }
+
+    .card-icon {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .card-sub {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #475569;
+      line-height: 1.25;
+      margin-top: 2px;
+    }
+
+    /* Specific Module Placements */
+
+    /* LEFT COLUMN: Sensors & Inputs */
+    #card-hazard {
+      top: 10px;
+      left: 10px;
+      width: 220px;
+      height: 72px;
+    }
+
+    #card-geo {
+      top: 96px;
+      left: 10px;
+      width: 220px;
+      height: 72px;
+    }
+
+    #card-rgb-thermal {
+      top: 182px;
+      left: 10px;
+      width: 220px;
+      height: 72px;
+    }
+
+    #card-acoustics {
+      top: 268px;
+      left: 10px;
+      width: 220px;
+      height: 72px;
+    }
+
+    #card-gpr {
+      top: 354px;
+      left: 10px;
+      width: 220px;
+      height: 72px;
+    }
+
+    #card-tof {
+      top: 440px;
+      left: 10px;
+      width: 220px;
+      height: 64px;
+    }
+
+    /* TOP CENTER: Power Module */
+    #card-power {
+      top: 10px;
+      left: 380px;
+      width: 250px;
+      height: 68px;
+      background: #f8fafc;
+    }
+
+    #card-sensor-hub {
+      top: 10px;
+      left: 250px;
+      width: 115px;
+      height: 68px;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      padding: 6px;
+      gap: 4px;
+    }
+    #card-sensor-hub .card-title { font-size: 11px; }
+
+    /* CENTER: Main Processor & AI Models */
+    #card-center-board {
+      top: 100px;
+      left: 310px;
+      width: 320px;
+      height: 380px;
+      background: #eff6ff;
+      border: 2.5px dashed #0284c7;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 16px;
+      gap: 10px;
+    }
+
+    .board-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-bottom: 8px;
+    }
+
+    .board-chip-icon {
+      width: 42px;
+      height: 42px;
+      background: #0284c7;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      box-shadow: 0 4px 8px rgba(2, 132, 199, 0.3);
+    }
+
+    .board-title-group h3 {
+      font-size: 16px;
+      font-weight: 900;
+      color: #0369a1;
+      line-height: 1.2;
+    }
+
+    .board-title-group span {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0284c7;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .ai-models-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 4px;
+    }
+
+    .model-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 6px 10px;
+    }
+
+    .model-icon {
+      font-size: 16px;
+    }
+
+    .model-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .model-name {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .model-desc {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    #card-flight-control {
+      top: 494px;
+      left: 345px;
+      width: 250px;
+      height: 52px;
+      justify-content: center;
+    }
+
+    /* RIGHT COLUMN: Actuators & Deployable Units */
+    #card-hexacopter {
+      top: 100px;
+      left: 690px;
+      width: 210px;
+      height: 74px;
+    }
+
+    #card-hexapods {
+      top: 190px;
+      left: 690px;
+      width: 210px;
+      height: 78px;
+    }
+
+    #card-victim {
+      top: 284px;
+      left: 690px;
+      width: 210px;
+      height: 78px;
+      background: #fff1f2;
+      border-color: #e11d48;
+    }
+    #card-victim .card-title { color: #be123c; }
+
+    #card-route-triage {
+      top: 378px;
+      left: 690px;
+      width: 210px;
+      height: 80px;
+      background: #f0fdf4;
+      border-color: #16a34a;
+    }
+    #card-route-triage .card-title { color: #15803d; }
+
+    /* FAR RIGHT: Mobile App & Digital Display */
+    .far-right-column {
+      position: absolute;
+      right: 14px;
+      top: 10px;
+      bottom: 10px;
+      width: 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .antenna-icon {
+      font-size: 32px;
+      color: #1e293b;
+      margin-top: 10px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
+    }
+
+    /* Phone Mockup Frame */
+    .phone-mockup {
+      width: 175px;
+      height: 290px;
+      background: #0f172a;
+      border: 4px solid #334155;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .phone-notch {
+      width: 60px;
+      height: 8px;
+      background: #334155;
+      border-radius: 0 0 6px 6px;
+      align-self: center;
+    }
+
+    .phone-screen {
+      flex: 1;
+      background: #090d16;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+    }
+
+    .phone-header {
+      font-size: 10px;
+      font-weight: 800;
+      color: #38bdf8;
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .phone-map-view {
+      flex: 1;
+      background: #1e293b;
+      border-radius: 8px;
+      border: 1px solid #38bdf8;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-circle {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      border: 1px dashed rgba(56, 189, 248, 0.4);
+      border-radius: 50%;
+    }
+
+    .target-pin {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #f43f5e;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 8px #f43f5e;
+    }
+
+    .phone-stats-card {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 6px;
+      margin-top: 6px;
+      font-size: 8px;
+      line-height: 1.3;
+      color: #cbd5e1;
+    }
+
+    .phone-stats-card b {
+      color: #10b981;
+    }
+
+    /* OLED Digital Display Box */
+    .oled-display {
+      width: 200px;
+      background: #000000;
+      border: 3px solid #475569;
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .oled-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #22c55e;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .oled-line.alert {
+      color: #f43f5e;
+    }
+
+    /* SVG Connecting Wire Overlay */
+    .wires-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Action bar below slide */
+    .actions-bar {
+      margin-top: 20px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .btn-action {
+      background: #0284c7;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-action:hover {
+      background: #0369a1;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 16:9 Presentation Slide Canvas -->
+  <div class="slide-canvas" id="sih-slide">
+
+    <!-- Header matching Image 1 -->
+    <div class="slide-header">
+      <div class="header-left">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span>AEGIS-SAR</span>
+        </div>
+      </div>
+
+      <div class="slide-title">TECHNICAL APPROACH</div>
+
+      <div class="header-right">
+        <div class="sih-badge">
+          <div class="sih-text">
+            <div class="sih-title">SMART INDIA HACKATHON</div>
+            <div class="sih-year">2025</div>
+          </div>
+          <!-- SIH Brain Gear Bulb Icon -->
+          <svg width="38" height="38" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="#f8fafc" stroke="#e2e8f0" stroke-width="3"/>
+            <path d="M30 40 Q40 20 60 25 Q75 35 70 55 Q65 70 50 78 Q35 70 30 55 Z" fill="#0284c7" opacity="0.8"/>
+            <circle cx="50" cy="45" r="16" fill="#f59e0b"/>
+            <path d="M45 80 L55 80 L52 90 L48 90 Z" fill="#64748b"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Diagram Canvas Area -->
+    <div class="diagram-body">
+
+      <!-- SVG Connecting Circuit Traces -->
+      <svg class="wires-overlay" width="100%" height="100%">
+        <!-- Black Data Wires: Left Sensors to Center Qualcomm Board -->
+        <path d="M 230 46 L 270 46 L 270 140 L 310 140" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 230 132 L 310 160" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 230 218 L 310 218" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 230 304 L 270 304 L 270 270 L 310 270" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 230 390 L 280 390 L 280 330 L 310 330" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 230 472 L 290 472 L 290 380 L 310 380" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+
+        <!-- Red Dotted Power Wires from LiPo Battery -->
+        <path d="M 450 78 L 450 100" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="4,4" marker-end="url(#arrow-red)"/>
+        <path d="M 400 44 L 240 44 L 240 180 L 230 180" fill="none" stroke="#e11d48" stroke-width="1.8" stroke-dasharray="4,4"/>
+        <path d="M 630 44 L 795 44 L 795 100" fill="none" stroke="#e11d48" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-red)"/>
+
+        <!-- Black Output Wires from Qualcomm Board to Actuators -->
+        <path d="M 630 140 L 690 140" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 630 220 L 690 220" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 630 300 L 690 300" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+        <path d="M 630 380 L 690 380" fill="none" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-black)"/>
+
+        <!-- Wireless Mesh Transmission to Antenna & Phone -->
+        <path d="M 630 260 L 980 260 L 980 90" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrow-blue)"/>
+        <path d="M 1030 90 L 1080 90 L 1080 140" fill="none" stroke="#0284c7" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-blue)"/>
+        <path d="M 1080 440 L 1080 470" fill="none" stroke="#e11d48" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-red)"/>
+
+        <!-- Arrow Markers -->
+        <defs>
+          <marker id="arrow-black" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 8 5 L 0 9 z" fill="#0f172a" />
+          </marker>
+          <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 8 5 L 0 9 z" fill="#e11d48" />
+          </marker>
+          <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 8 5 L 0 9 z" fill="#0284c7" />
+          </marker>
+        </defs>
+      </svg>
+
+      <!-- ================= SENSORS (LEFT COLUMN) ================= -->
+      <!-- Hazard Classification -->
+      <div class="dashed-card" id="card-hazard">
+        <div class="card-icon" style="font-size: 26px;">⚠️</div>
+        <div class="card-text">
+          <span class="card-title">Hazard Classification</span>
+          <span class="card-sub">Fire, Flood, Landslides, 115kV Cable</span>
+        </div>
+      </div>
+
+      <!-- Geo-Annotation -->
+      <div class="dashed-card" id="card-geo">
+        <div class="card-icon" style="font-size: 26px;">📍</div>
+        <div class="card-text">
+          <span class="card-title">Geo-Annotation (GPS)</span>
+          <span class="card-sub">RTK-GPS & VIO SLAM Mapping</span>
+        </div>
+      </div>
+
+      <!-- RGB + Thermal -->
+      <div class="dashed-card" id="card-rgb-thermal">
+        <div class="card-icon" style="font-size: 26px;">📷</div>
+        <div class="card-text">
+          <span class="card-title">RGB + Thermal Pod</span>
+          <span class="card-sub">4K Optical + FLIR LWIR (310K Core)</span>
+        </div>
+      </div>
+
+      <!-- Acoustics -->
+      <div class="dashed-card" id="card-acoustics">
+        <div class="card-icon" style="font-size: 26px;">🎙️</div>
+        <div class="card-text">
+          <span class="card-title">Acoustics Array</span>
+          <span class="card-sub">4-Mic Beamforming (300Hz-3.4kHz)</span>
+        </div>
+      </div>
+
+      <!-- GPR Radar -->
+      <div class="dashed-card" id="card-gpr">
+        <div class="card-icon" style="font-size: 26px;">📡</div>
+        <div class="card-text">
+          <span class="card-title">GPR / mmWave Radar</span>
+          <span class="card-sub">1-3m Rubble Respiration Doppler</span>
+        </div>
+      </div>
+
+      <!-- ToF Sensors -->
+      <div class="dashed-card" id="card-tof">
+        <div class="card-icon" style="font-size: 24px;">📏</div>
+        <div class="card-text">
+          <span class="card-title">ToF Sensors</span>
+          <span class="card-sub">Obstacle Clearance & Radar AGL</span>
+        </div>
+      </div>
+
+      <!-- Top Center: Power & Hub -->
+      <div class="dashed-card" id="card-sensor-hub">
+        <span class="card-title" style="color: #0284c7;">Sensor Fusion<br>Hub</span>
+      </div>
+
+      <div class="dashed-card" id="card-power">
+        <div class="card-icon" style="font-size: 26px;">🔋</div>
+        <div class="card-text">
+          <span class="card-title">6S LiPo Smart Battery & PDU</span>
+          <span class="card-sub">22.2V High-Discharge Power Rails</span>
+        </div>
+      </div>
+
+      <!-- ================= CENTER BOARD ================= -->
+      <div class="dashed-card" id="card-center-board">
+        <div class="board-header">
+          <div class="board-chip-icon">Q</div>
+          <div class="board-title-group">
+            <h3>Qualcomm Snapdragon RB5</h3>
+            <span>ON-DEVICE EDGE-AI PROCESSOR (15 TOPS)</span>
+          </div>
+        </div>
+
+        <div class="ai-models-list">
+          <div class="model-item">
+            <span class="model-icon">👁️</span>
+            <div class="model-info">
+              <span class="model-name">Vision Model (YOLOv8-Pose)</span>
+              <span class="model-desc">Detects human silhouette & keypoint limbs</span>
+            </div>
+          </div>
+
+          <div class="model-item">
+            <span class="model-icon">🌡️</span>
+            <div class="model-info">
+              <span class="model-name">Thermal Heat Classifier</span>
+              <span class="model-desc">Confirms 310K ($37^\circ\text{C}$) & rejects engine/rocks</span>
+            </div>
+          </div>
+
+          <div class="model-item">
+            <span class="model-icon">🎙️</span>
+            <div class="model-info">
+              <span class="model-name">Acoustic Triangulation Model</span>
+              <span class="model-desc">Localizes screams & distress tapping audio</span>
+            </div>
+          </div>
+
+          <div class="model-item">
+            <span class="model-icon">📡</span>
+            <div class="model-info">
+              <span class="model-name">Doppler Respiration Vitals</span>
+              <span class="model-desc">Extracts chest wall breathing under rubble</span>
+            </div>
+          </div>
+
+          <div class="model-item">
+            <span class="model-icon">🧭</span>
+            <div class="model-info">
+              <span class="model-name">Autonomous VIO SLAM & Nav</span>
+              <span class="model-desc">GPS-denied contouring & path planning</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashed-card" id="card-flight-control">
+        <div class="card-icon" style="font-size: 20px;">⚙️</div>
+        <div class="card-text">
+          <span class="card-title" style="font-size: 12px;">PX4 Autopilot Flight Control Unit</span>
+        </div>
+      </div>
+
+      <!-- ================= ACTUATORS & OUTPUTS (RIGHT) ================= -->
+      <!-- Hexacopter System -->
+      <div class="dashed-card" id="card-hexacopter">
+        <div class="card-icon" style="font-size: 26px;">🚁</div>
+        <div class="card-text">
+          <span class="card-title">Hexacopter Propulsion</span>
+          <span class="card-sub">6x BLDC Motors + 40A ESCs + Gimbal</span>
+        </div>
+      </div>
+
+      <!-- Hexapods -->
+      <div class="dashed-card" id="card-hexapods">
+        <div class="card-icon" style="font-size: 26px;">🤖</div>
+        <div class="card-text">
+          <span class="card-title">Deployable Hexapods</span>
+          <span class="card-sub">Ground Micro-Rovers for Rubble Crevices</span>
+        </div>
+      </div>
+
+      <!-- Victim Detection Confirmation -->
+      <div class="dashed-card" id="card-victim">
+        <div class="card-icon" style="font-size: 26px;">👤</div>
+        <div class="card-text">
+          <span class="card-title">Victim Detection</span>
+          <span class="card-sub">Fused Multi-Modal Confirmation & Geotag</span>
+        </div>
+      </div>
+
+      <!-- Optimal Rescue Route & TRIAGE -->
+      <div class="dashed-card" id="card-route-triage">
+        <div class="card-icon" style="font-size: 26px;">🚑</div>
+        <div class="card-text">
+          <span class="card-title">Optimal Route & TRIAGE</span>
+          <span class="card-sub">A* Hazard Buffer Path & P1/P2 Dispatch</span>
+        </div>
+      </div>
+
+      <!-- ================= FAR RIGHT: APP & DISPLAY ================= -->
+      <div class="far-right-column">
+        <!-- Antenna -->
+        <div class="antenna-icon">📡</div>
+        <span style="font-size: 10px; font-weight: 800; color: #0284c7; letter-spacing: 0.5px; margin-top: -6px;">LoRa / ESP-NOW / 5G</span>
+
+        <!-- Smartphone Mockup -->
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-header">AEGIS COMMAND APP</div>
+            <div class="phone-map-view">
+              <div class="radar-circle"></div>
+              <div class="target-pin" style="top: 35%; left: 45%;"></div>
+              <div class="target-pin" style="top: 65%; left: 60%; background: #eab308;"></div>
+            </div>
+            <div class="phone-stats-card">
+              <div>TARGET: <b>CASUALTY ALPHA</b></div>
+              <div>STATUS: <b>LIVING (310K)</b></div>
+              <div>TRIAGE: <b style="color: #f43f5e;">P1 IMMEDIATE</b></div>
+              <div>ROUTE: <b>SAFE CLEARANCE</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OLED Screen -->
+        <div class="oled-display">
+          <div class="oled-line"><span>RADAR AGL:</span> <span>8.0 M</span></div>
+          <div class="oled-line"><span>HDG / SPEED:</span> <span>045° / 4.2m/s</span></div>
+          <div class="oled-line alert"><span>TRIAGE ALERT:</span> <span>P1 CRITICAL</span></div>
+          <div class="oled-line"><span>BATTERY:</span> <span>89% (22.2V)</span></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom Actions -->
+  <div class="actions-bar">
+    <button onclick="window.print()" class="btn-action">🖨️ Print / Save High-Res PDF</button>
+    <a href="/" class="btn-action" style="background: #334155;">Return to 3D Simulation</a>
+  </div>
+
+</body>
+</html>

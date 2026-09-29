@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="aegis_disaster_zone">
+
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"></plugin>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <!-- Required for the thermal_camera sensor on x500_aegis to read
+         per-object temperatures from the <plugin ...Thermal> tags below -->
+    <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal"></plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"></plugin>
+    <plugin filename="gz-sim-air-pressure-system" name="gz::sim::systems::AirPressure"></plugin>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"></plugin>
+
+    <light type="directional" name="sunUTC">
+      <pose>0 0 500 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>0.3 0.3 -0.9</direction>
+      <cast_shadows>true</cast_shadows>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material>
+            <ambient>0.5 0.45 0.4 1</ambient>
+            <diffuse>0.5 0.45 0.4 1</diffuse>
+          </material>
+          <!-- Ambient ground temperature ~300K (~27C) -->
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>300</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== Disaster scene props ==================== -->
+
+    <!-- Rubble/debris piles — static gray boxes, ambient temperature,
+         scattered to force the drone to navigate around obstacles. -->
+    <model name="debris_pile_1">
+      <static>true</static>
+      <pose>3 2 0.4 0.1 0.2 0.5</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>2 1.5 0.8</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>2 1.5 0.8</size></box></geometry>
+          <material><ambient>0.4 0.35 0.3 1</ambient><diffuse>0.4 0.35 0.3 1</diffuse></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>298</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <model name="debris_pile_2">
+      <static>true</static>
+      <pose>-2 4 0.3 0 0 1.2</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.5 1.2 0.6</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>1.5 1.2 0.6</size></box></geometry>
+          <material><ambient>0.35 0.3 0.28 1</ambient><diffuse>0.35 0.3 0.28 1</diffuse></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>299</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <model name="collapsed_wall">
+      <static>true</static>
+      <pose>5 -3 0.5 0.3 0 0.8</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>3 0.3 1</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>3 0.3 1</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>297</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- VICTIM: real human-body-range thermal signature (~310K / 37C),
+         low profile (lying down), positioned near debris — this is what
+         the fusion model + acoustic/radar path should flag as "person". -->
+    <model name="victim_signature">
+      <static>true</static>
+      <pose>3.5 1.5 0.15 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>1.7 0.4 0.25</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>1.7 0.4 0.25</size></box></geometry>
+          <material><ambient>0.55 0.45 0.4 1</ambient><diffuse>0.55 0.45 0.4 1</diffuse></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>310</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- FALSE POSITIVE: a sun-warmed rock, hot enough to plausibly
+         trigger a naive thermal-only detector, but NOT in the 310K
+         human range and NOT person-shaped — this is what should get
+         classified heat_false_positive, not person, and is the whole
+         reason the fusion model needs RGB context, not just thermal. -->
+    <model name="warm_rock">
+      <static>true</static>
+      <pose>-3 -2 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><sphere><radius>0.4</radius></sphere></geometry></collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.4</radius></sphere></geometry>
+          <material><ambient>0.5 0.45 0.42 1</ambient><diffuse>0.5 0.45 0.42 1</diffuse></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>305</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- FIRE HAZARD: very hot, matches Section 4's fire deterministic
+         check threshold (>250C = 523K). Real flicker/motion texture
+         isn't simulated by a static prop — this gives you the thermal
+         half of that check; wire flicker/motion synthetically in your
+         sensor snapshot until you add an actual particle-fire plugin. -->
+    <model name="fire_hazard">
+      <static>true</static>
+      <pose>-1 -5 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><cylinder><radius>0.3</radius><length>1</length></cylinder></geometry></collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.3</radius><length>1</length></cylinder></geometry>
+          <material><ambient>0.9 0.3 0.1 1</ambient><diffuse>0.9 0.3 0.1 1</diffuse><emissive>0.8 0.2 0 1</emissive></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <!-- ~600C, well above the fire check's 250C threshold -->
+            <temperature>873</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- DOWNED POWER LINE: linear prop near the "grid infra" marker,
+         moderately elevated temperature (short-circuit heating), for
+         Section 4's downed-power-line deterministic check. -->
+    <model name="downed_power_line">
+      <static>true</static>
+      <pose>6 3 0.05 0 0 0.3</pose>
+      <link name="link">
+        <collision name="collision"><geometry><cylinder><radius>0.03</radius><length>4</length></cylinder></geometry></collision>
+        <visual name="visual">
+          <pose>0 0 0 1.5708 0 0</pose>
+          <geometry><cylinder><radius>0.03</radius><length>4</length></cylinder></geometry>
+          <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+          <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::Thermal">
+            <temperature>315</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <model name="grid_infra_marker">
+      <static>true</static>
+      <pose>6.5 3.5 1 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.1</radius><length>2</length></cylinder></geometry>
+          <material><ambient>0.3 0.3 0.3 1</ambient><diffuse>0.3 0.3 0.3 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================= end disaster scene props ==================== -->
+
+  </world>
+</sdf>

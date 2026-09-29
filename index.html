@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AEGIS-SAR: autonomous search and rescue incident command simulation">
+  <title>AEGIS-SAR | Incident Command Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ============ LOADING SCREEN ============ -->
+  <div id="loading-screen">
+    <div class="loader-content">
+      <div class="loader-logo-wrap">
+        <div class="loader-rings">
+          <div class="ring ring-outer"></div>
+          <div class="ring ring-middle"></div>
+          <div class="ring ring-inner"></div>
+        </div>
+        <div class="loader-icon">◆</div>
+      </div>
+      <div class="loader-brand">
+        <span class="brand-main">AEGIS</span><span class="brand-accent">-SAR</span>
+      </div>
+      <div class="loader-subtitle">Autonomous search and rescue command simulation with live sensor fusion</div>
+      <div class="loader-bar-wrap">
+        <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+        <div class="loader-pct" id="loader-pct">0%</div>
+      </div>
+      <div class="loader-log" id="loader-log">
+        <div class="log-line active">Initializing incident command simulation...</div>
+      </div>
+      <div class="loader-footer">
+        <span>AEGIS SAR PLATFORM v4.3</span>
+        <span>TRAINING SIMULATION</span>
+        <span>FIELD RESPONSE CONSOLE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3D VIEWPORT ============ -->
+  <canvas id="main-canvas"></canvas>
+
+  <!-- ============ VIGNETTE & SCANLINES ============ -->
+  <div class="vignette-overlay"></div>
+  <div class="hud-grid-overlay"></div>
+
+  <!-- ============ TOP BAR ============ -->
+  <header id="top-bar">
+    <div class="top-left">
+      <div class="logo">
+        <div class="logo-diamond"><span>◆</span></div>
+        <div class="logo-text-group">
+          <span class="logo-text">AEGIS<span class="logo-accent">-SAR</span></span>
+          <span class="logo-version">INCIDENT COMMAND CONSOLE // v4.3</span>
+        </div>
+      </div>
+      <div class="divider-v"></div>
+      <div class="telemetry-pill">
+        <span class="telemetry-dot pulse"></span>
+        <span class="telemetry-status">MESH LINK ONLINE</span>
+      </div>
+      <div class="telemetry-badge">
+        <span class="label">LOCAL-GPS:</span>
+        <span class="val" id="telemetry-gps">RTK FIX (19 SATS)</span>
+      </div>
+      <div class="telemetry-badge">
+        <span class="label">LINK:</span>
+        <span class="val" id="telemetry-rssi">-61 dBm (99.8%)</span>
+      </div>
+    </div>
+
+    <div class="top-center">
+      <div class="stat-block">
+        <span class="stat-label">MISSION TIME</span>
+        <span class="stat-value mono" id="elapsed-time">00:00:00</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-label">SURVIVORS CONFIRMED</span>
+        <span class="stat-value highlight-green" id="survivor-count">0</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-label">CRITICAL HAZARDS</span>
+        <span class="stat-value highlight-red" id="hazard-count">0</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-label">SWARM COVERAGE</span>
+        <span class="stat-value highlight-cyan" id="area-swept">0%</span>
+      </div>
+    </div>
+
+    <div class="top-right">
+      <div class="incident-badge">
+        <span class="incident-icon">!</span>
+        <div>
+          <span class="incident-label">INCIDENT PROFILE</span>
+          <span class="incident-value">LANDSLIDE RESPONSE / FIRE RISK</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ LEFT CAMERA SENSOR FEEDS (PiP) ============ -->
+  <div id="camera-feeds">
+    <!-- RGB Optical Feed -->
+    <div class="cam-feed" id="rgb-feed">
+      <div class="cam-header">
+        <span class="cam-dot rgb"></span>
+        <span class="cam-title">EO OPTICAL 4K // AEGIS-1</span>
+        <span class="cam-rec">● REC</span>
+      </div>
+      <div class="cam-canvas-wrap">
+        <canvas id="rgb-canvas" width="320" height="240"></canvas>
+        <div class="cam-scanline"></div>
+        <div class="cam-overlay-data">
+          <span class="focal">FOV: 84°</span>
+          <span class="res">1080P/60</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLIR Thermal LWIR Feed -->
+    <div class="cam-feed" id="thermal-feed">
+      <div class="cam-header">
+        <span class="cam-dot thermal"></span>
+        <span class="cam-title">FLIR LWIR 8-14μm</span>
+        <div class="palette-selectors">
+          <button class="palette-btn active" data-palette="ironbow" title="Ironbow standard">IRN</button>
+          <button class="palette-btn" data-palette="white_hot" title="White Hot">W-HOT</button>
+          <button class="palette-btn" data-palette="black_hot" title="Black Hot">B-HOT</button>
+        </div>
+      </div>
+      <div class="cam-canvas-wrap">
+        <canvas id="thermal-canvas" width="320" height="240"></canvas>
+        <div class="cam-scanline"></div>
+        <div class="pyrometer-badge" id="pyrometer-badge">
+          <span class="pyro-label">PYRO:</span>
+          <span class="pyro-val" id="pyro-val">37.0°C</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRIMARY FLIGHT DISPLAY (PFD) HUD ============ -->
+  <div id="pfd-hud">
+    <!-- Heading Compass Ribbon -->
+    <div class="compass-tape-wrap">
+      <div class="compass-needle">▲</div>
+      <div class="compass-tape" id="compass-tape">
+        <span>N</span> · <span>030</span> · <span>060</span> · <span>E</span> · <span>120</span> · <span>150</span> · <span>S</span> · <span>210</span> · <span>240</span> · <span>W</span> · <span>300</span> · <span>330</span> · <span>N</span>
+      </div>
+      <div class="compass-reading" id="compass-deg">000° HDG</div>
+    </div>
+
+    <!-- Artificial Horizon Reticle -->
+    <div class="artificial-horizon">
+      <div class="roll-arc"></div>
+      <div class="horizon-pitch-ladder" id="pitch-ladder">
+        <div class="pitch-line p-10"><span>+10</span><div class="bar"></div><span>+10</span></div>
+        <div class="pitch-line p-5"><span>+5</span><div class="bar"></div><span>+5</span></div>
+        <div class="pitch-line p-0"><div class="center-horizon-line"></div></div>
+        <div class="pitch-line p-n5"><span>-5</span><div class="bar dashed"></div><span>-5</span></div>
+        <div class="pitch-line p-n10"><span>-10</span><div class="bar dashed"></div><span>-10</span></div>
+      </div>
+      <div class="aircraft-boresight">
+        <div class="wing left"></div>
+        <div class="center-pip"></div>
+        <div class="wing right"></div>
+      </div>
+    </div>
+
+    <!-- Speed Tape (Left) -->
+    <div class="flight-tape speed-tape">
+      <div class="tape-label">IAS m/s</div>
+      <div class="tape-value mono" id="tape-speed">0.0</div>
+    </div>
+
+    <!-- Altitude Tape (Right) -->
+    <div class="flight-tape alt-tape">
+      <div class="tape-label">ALT AGL</div>
+      <div class="tape-value mono" id="tape-alt">8.0m</div>
+      <div class="tape-sub" id="tape-vsi">VSI: 0.0</div>
+    </div>
+  </div>
+
+  <!-- ============ DYNAMIC 2D TARGET BRACKETS CONTAINER ============ -->
+  <div id="tactical-hud-markers"></div>
+
+  <!-- ============ RIGHT DASHBOARD PANEL ============ -->
+  <aside id="dashboard">
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <span class="panel-title">INCIDENT COMMAND BOARD</span>
+        <span class="panel-subtitle">LIVE SENSOR FUSION AND RESPONSE QUEUE</span>
+      </div>
+      <div class="panel-status"><span class="status-dot online"></span>LIVE MESH</div>
+    </div>
+
+    <div class="panel-tabs">
+      <button class="tab" data-tab="detections">
+        <span class="tab-icon">01</span>FINDINGS
+      </button>
+      <button class="tab" data-tab="triage">
+        <span class="tab-icon">02</span>TRIAGE
+      </button>
+      <button class="tab" data-tab="drones">
+        <span class="tab-icon">03</span>FLEET
+      </button>
+      <button class="tab active" data-tab="ops">
+        <span class="tab-icon">04</span>OPS
+      </button>
+    </div>
+
+    <!-- Target Feed -->
+    <div class="tab-content" id="tab-detections">
+      <div class="sub-header">
+        <span>FIELD FINDINGS</span>
+        <div class="filter-pills">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="auto_flagged">Confirmed</button>
+          <button class="pill" data-filter="needs_review">Review</button>
+        </div>
+      </div>
+      <div class="detection-list" id="detection-list">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="16" stroke="rgba(0,200,255,0.2)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <circle cx="18" cy="18" r="7" stroke="rgba(0,200,255,0.4)" stroke-width="1"/>
+              <circle cx="18" cy="18" r="2" fill="rgba(0,200,255,0.8)"/>
+            </svg>
+          </div>
+          <div>SCANNING INCIDENT SECTOR</div>
+          <div class="empty-sub">Sensor fusion pipeline active</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Triage Scores -->
+    <div class="tab-content" id="tab-triage">
+      <div class="sub-header">
+        <span>PRIORITY RESCUE DISPATCH QUEUE</span>
+      </div>
+      <div class="triage-list" id="triage-list">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M18 6 L22 14 L18 12 L14 14 Z" stroke="rgba(255,61,90,0.4)" fill="rgba(255,61,90,0.1)" stroke-width="1"/>
+              <circle cx="18" cy="24" r="5" stroke="rgba(255,61,90,0.3)" stroke-width="1" stroke-dasharray="3 3"/>
+            </svg>
+          </div>
+          <div>AWAITING CASUALTY LOCALIZATION</div>
+          <div class="empty-sub">Sorting by deterministic risk coefficient</div>
+        </div>
+      </div>
+      <div class="triage-formula" id="triage-formula">
+        <div class="formula-label">TRIAGE FORMULATION (SECTION 8)</div>
+        <code>T = w₁·T_core + w₂·dB_spl + w₃·D_hazard⁻¹ + w₄·Risk_struct + w₅·Δt_exp</code>
+        <div class="formula-note">Dynamic weights configured for SEISMIC + FLAME event</div>
+      </div>
+    </div>
+
+    <!-- Drone Status -->
+    <div class="tab-content" id="tab-drones">
+      <div class="sub-header"><span>AUTONOMOUS RESPONSE FLEET</span></div>
+      <div class="drone-list" id="drone-list"></div>
+    </div>
+
+    <!-- Operations Decision Support -->
+    <div class="tab-content active" id="tab-ops">
+      <div class="sub-header"><span>MISSION DECISION SUPPORT</span></div>
+      <div class="ops-panel">
+        <div class="ops-kpi-grid">
+          <div><span>LOCAL GPS</span><strong>2.8 CM</strong></div>
+          <div><span>MESH</span><strong>ONLINE</strong></div>
+          <div><span>FORECAST</span><strong>LIVE</strong></div>
+          <div><span>PLANNER</span><strong>READY</strong></div>
+        </div>
+
+        <div class="ops-card">
+          <div class="ops-card-title">HAZARD PROPAGATION</div>
+          <div class="ops-readout-row">
+            <span>FORECAST</span>
+            <strong id="ops-forecast">T+15 MIN</strong>
+          </div>
+          <input id="hazard-forecast-slider" class="ops-slider" type="range" min="0" max="60" value="15" step="15">
+          <div class="ops-ticks"><span>NOW</span><span>+15</span><span>+30</span><span>+60</span></div>
+          <div class="ops-readout-row">
+            <span>EVAC RISK</span>
+            <strong id="ops-risk">CONTAINED</strong>
+          </div>
+        </div>
+
+        <div class="ops-card">
+          <div class="ops-card-title">GROUND RESCUE ROUTE</div>
+          <div class="ops-route-status" id="ops-route-status">AWAITING SURVIVOR LOCK</div>
+          <div class="ops-route-grid">
+            <div><span>ETA</span><strong id="ops-route-eta">--</strong></div>
+            <div><span>DISTANCE</span><strong id="ops-route-distance">--</strong></div>
+          </div>
+          <div class="ops-route-target" id="ops-route-target">NO DISPATCH TARGET SELECTED</div>
+          <button id="btn-dispatch-route" class="btn-dispatch-route">GENERATE SAFE ROUTE</button>
+          <button id="btn-demo-run" class="btn-demo-run">START JUDGE DEMO SEQUENCE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Footer: Export Incident Report -->
+    <div class="panel-footer">
+      <button id="btn-export-report" class="btn-export">
+        <span class="btn-icon">JSON</span> EXPORT INCIDENT REPORT
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ BOTTOM CONTROLS ============ -->
+  <footer id="controls-bar">
+    <div class="control-group">
+      <div class="key-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Move</span></div>
+      <div class="key-hint"><kbd>Q</kbd><kbd>E</kbd> <span>Altitude</span></div>
+      <div class="key-hint"><kbd>Mouse</kbd> <span>Gimbal</span></div>
+    </div>
+
+    <div class="mode-toggle">
+      <button id="btn-manual" class="mode-btn active">
+        <span class="mode-icon"></span> MANUAL
+      </button>
+      <button id="btn-auto" class="mode-btn">
+        <span class="mode-icon"></span> AUTONOMOUS
+      </button>
+    </div>
+
+    <div class="cam-view-toggle">
+      <span class="cam-view-label">CAM:</span>
+      <button class="cam-view-btn active" data-cam="chase" title="Tactical 3rd Person Chase Camera">CHASE</button>
+      <button class="cam-view-btn" data-cam="fpv" title="First-Person Gimbal Camera">FPV</button>
+      <button class="cam-view-btn" data-cam="recon" title="High-Altitude Reconnaissance Map">RECON</button>
+    </div>
+
+    <div class="pattern-selector">
+      <span class="pattern-label">PATTERN:</span>
+      <select id="search-pattern-select" class="pattern-select">
+        <option value="creeping_line">Creeping Line (Disaster Grid)</option>
+        <option value="expanding_square">Expanding Square (Localized)</option>
+        <option value="sector_search">Sector Search (360° Sweep)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <div class="key-hint"><kbd>T</kbd> <span>FLIR Palette</span></div>
+      <div class="key-hint"><kbd>Space</kbd> <span>Pause</span></div>
+      <div class="key-hint"><kbd>R</kbd> <span>Reset</span></div>
+    </div>
+  </footer>
+
+  <!-- ============ SCRIPT INITIALIZATION ============ -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

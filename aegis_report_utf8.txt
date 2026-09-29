@@ -1,0 +1,87 @@
+AEGIS-SAR
+Acoustic-Enhanced, Gas-aware, Infrared-fused Swarm for Autonomous Rescue
+An Autonomous, On-Device AI Drone Swarm for Disaster Search and Rescue
+Submitted by
+NNP
+B.E. Electronics and Communication Engineering
+Velammal College of Engineering and Technology (Autonomous), Madurai
+Hackathon Problem Statement Response — Disaster Search & Rescue Drone
+
+1. Executive Summary
+AEGIS-SAR is a decentralized swarm of edge-autonomous drones that goes beyond the standard RGB-and-thermal detection brief. Four independent sensing modalities — vision, thermal, acoustic, and chemical — are fused through a hybrid deterministic-plus-machine-learning pipeline, and the swarm coordinates over a bandwidth-starved mesh protocol that lets multiple drones build one shared disaster map without any cloud or cellular link.
+The central design principle is a triage-and-trust architecture: every detection carries a deterministic confidence audit trail, so responders can see why the system flagged something rather than trusting an opaque bounding box.
+2. What Differentiates AEGIS-SAR
+
+3. System Architecture
+The diagram below shows the full per-drone stack (sensing through mission autonomy), the decentralized swarm coordination layer, and the opportunistic ground command center. No single layer or drone is a point of failure — the swarm coordination layer runs entirely peer-to-peer over the mesh.
+
+Figure 1. AEGIS-SAR layered system architecture — sensing, navigation, perception fusion, mission autonomy, comms mesh, swarm coordination, and ground command center.
+4. Hybrid Deterministic + ML Hazard Classification
+Pure black-box classification is fragile when a disaster scene does not resemble training data. AEGIS-SAR scores every hazard through two independent paths that must agree — or the disagreement itself becomes signal.
+Deterministic checks — Fire: thermal hotspot above 250°C combined with 1–3 Hz IR flicker and RGB motion texture.
+Floodwater: reflectivity signature plus a digital-elevation-model delta between pre-disaster and current altitude-corrected depth.
+Downed power line: linear thermal anomaly near mapped grid infrastructure (offline OSM layer).
+Structural instability: vibration signature during close hover plus thermal-creep pattern across repeated passes.
+Fusion rule: agreement between the ML and deterministic paths produces a high-confidence, auto-flagged alert. Disagreement is routed to a “needs human review” queue with both reasoning traces shown on the dashboard — an auditable reason for every alert.
+5. Multi-Sensor Victim Detection
+Acoustic layer — 4-mic MEMS array with onboard beamforming to localize cries, voices, or tapping from survivors occluded by rubble; a lightweight CNN on mel-spectrograms separates human vocalizations from wind, water, or machinery.
+Gas/VOC layer — MOX sensor array (CO, CH4, VOC) with deterministic threshold logic and temperature/humidity drift compensation.
+Thermal + RGB fusion — Cross-attention fusion of LWIR thermal blobs with RGB context, distinguishing a live human thermal signature from a heat-retaining rock or debris pile.
+Through-rubble vital-sign radar — FMCW/UWB radar performing micro-Doppler analysis of chest displacement to detect breathing and heartbeat through non-metallic debris — the one modality here that no camera or microphone can replicate.
+6. Navigation: Graceful Degradation
+Normal conditions — GPS/RTK plus visual-inertial SLAM (ORB-SLAM3-lite, quantized) for centimeter-level outdoor localization.
+GPS-denied — Visual SLAM takes over for urban canyons and indoor collapse.
+Vision-denied (smoke/dust/darkness) — Deterministic dead-reckoning — IMU double-integration corrected by optical flow on thermal imagery (which still registers in smoke/dust) plus barometric altitude hold, with drift bounded by ToF-ring wall-following.
+7. Swarm Coordination and Offline Map Fusion
+Mesh protocol — ESP-NOW for tight-formation drone-to-drone links (under 50 m, low latency); LoRa for longer-range relay.
+Decentralized SLAM merging — Drones share compact pose-graph keyframes, not raw point clouds; any drone or the dashboard can merge overlapping keyframes via loop-closure detection, so the shared map has no single point of failure.
+Adaptive coverage planning — An ant-colony-inspired algorithm biases the swarm's search toward regions with rising acoustic/thermal signal density.
+Bandwidth-efficient telemetry — Each detection serializes to a ~200-byte packet, sendable over LoRa even in a fully offline zone; full imagery queues locally and syncs opportunistically over Wi-Fi/5G.
+8. Victim Triage Score Engine
+Every detected person receives a transparent, computed score rather than a bare “person detected” flag:
+TriageScore = w1·(thermal_confidence) + w2·(acoustic_confirmation) + w3·(proximity_to_hazard) + w4·(structural_risk_nearby) + w5·(time_since_last_contact_estimate)
+Weights are configurable per disaster type (flood, earthquake, fire), and the formula — not a black box — is shown on the dashboard beside each marker.
+9. Command Center Dashboard
+Live merged swarm map with triage-scored survivor markers, hazard zones (each with its ML/deterministic reasoning trace), and a safe-access-route overlay.
+Per-drone mission status: battery, comms link quality, current sub-region being swept.
+Alert feed separating auto-flagged (high-confidence) from needs-review (disagreement) hazards.
+Fully functional offline against locally synced mesh data; upgrades to full imagery once connectivity resumes.
+10. Hardware Bill of Materials (per drone)
+
+11. Implementation Roadmap
+Phase 1 — Proof of concept: Single drone (or ground rig simulating drone sensors) running RGB+thermal fusion detection with the deterministic hazard-rule engine, logging geotags to a local map.
+Phase 2: Add acoustic and gas sensing, the triage-scoring engine, and the offline dashboard.
+Phase 3: Two-drone mesh demo — decentralized map merge over ESP-NOW/LoRa, with the swarm coverage bias visibly converging on simulated survivor signal sources.
+Phase 4 — Stretch: Full GPS-denied navigation fallback demo (dead-reckoning plus thermal optical flow) in a smoke-simulated environment.
+
+12. Tier-2 Novelty Extensions
+These extensions push past a conventional multi-sensor drone concept by adding genuinely new sensing or intelligence primitives rather than another camera.
+12.1 Through-Rubble Vital-Sign Radar
+Micro-Doppler processing on an FMCW/UWB radar return detects the sub-millimeter chest displacement of breathing and heartbeat through non-metallic debris, rubble, and thin concrete or timber — answering the brief's hardest case: a survivor who is buried, silent, and thermally masked.
+12.2 Predictive Hazard Propagation
+A deterministic, on-device cellular-automaton model projects how a detected hazard evolves over the next 15–60 minutes — fire spread from wind vector and fuel density, or flood rise from terrain gradient and water-level delta — kept separate from the ML stack so its output stays interpretable.
+12.3 Active Ultrasonic Void-Echo Mapping
+Ultrasonic pulses into collapsed-structure debris fields, analyzed by time-of-flight echo pattern, flag likely void pockets — cavities large enough to shelter a survivor — before any other sensor confirms a person is present.
+12.4 Bandwidth-Constrained Federated Field Adaptation
+Drones exchange kilobyte-scale model-delta updates over the mesh when in range, so a correction learned by one drone (e.g. local debris color causing thermal false positives) propagates across the swarm without touching the cloud.
+12.5 Swarm-Level Bayesian Belief Fusion
+Independent detection confidences for the same geotagged area, observed by two or more drones, are combined via a Bayesian update rather than trusting whichever single reading arrived first — collective confirmation computed at the edge.
+12.6 Physical Relay-Pod Deployment
+Drones air-drop small solar-powered LoRa relay pods at chosen waypoints, physically extending the mesh's footprint in dense urban rubble rather than relying solely on drone-to-drone range.
+13. True End-to-End Autonomy Stack
+Sensing and intelligence are not the same as autonomy. AEGIS-SAR closes a sense-plan-act loop that runs onboard with no human in the control loop during a mission: a coordinator sets the mission scope, and the swarm handles everything else until it returns or reports.
+13.1 Autonomous Mission Loop
+Takeoff & self-check — The drone verifies sensor health, GPS lock (or VIO initialization), battery state, and mesh connectivity before departing.
+Frontier-based exploration — Each drone autonomously selects the next frontier — the boundary between explored and unexplored space — rather than following pre-set waypoints.
+Interrupt-and-investigate — When a detection crosses a confidence threshold mid-sweep, the drone autonomously breaks its search pattern, re-plans a tighter local trajectory to confirm from multiple angles, updates the triage score, then resumes — without waiting for operator approval.
+Autonomous obstacle negotiation — The ToF ring and depth camera feed a reactive local planner that re-routes around debris or dynamic hazards at control-loop rate.
+Battery/return management — Each drone predicts remaining flight time against distance-to-return and autonomously selects a safe landing spot using deterministic terrain-flatness analysis.
+Autonomous report generation — On return, the drone compiles geo-tagged detections, triage scores, and the hazard map into a structured report with no manual annotation.
+13.2 Decentralized Autonomous Task Allocation
+No central controller assigns search areas. Drones run a lightweight auction algorithm over the mesh — broadcasting position, battery, and coverage gaps — so zones are allocated to whichever drone can cover them most efficiently. A high-triage-score discovery triggers nearby drones to autonomously re-bid toward corroboration or backfilling the abandoned area.
+13.3 What Autonomy Level This Targets
+AEGIS-SAR targets bounded full autonomy: a human sets mission scope and receives outputs, but does not fly, approve individual maneuvers, or direct search patterns. It does not claim fully unsupervised, open-ended autonomy — a rescue coordinator still defines the mission boundary and retains final say on dispatching ground teams. This is deliberately an honest, defensible autonomy claim.
+14. Limitations
+Acoustic detection is unreliable in high-wind or high-machinery-noise zones; treated as a confirmatory signal, not a primary one.
+RTK GPS range and full swarm mesh range require real-world field testing beyond a hackathon's scope; the roadmap scopes a feasible demo subset.
+MOX gas sensors drift and need periodic calibration; deterministic drift compensation reduces but does not eliminate this.

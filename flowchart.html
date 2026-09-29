@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS-SAR — System Flowchart & Operational Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(15, 23, 42, 0.92);
+      --card-border: rgba(56, 189, 248, 0.25);
+      --card-hover: rgba(56, 189, 248, 0.45);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --cyan: #38bdf8;
+      --emerald: #10b981;
+      --purple: #c084fc;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --glow-cyan: rgba(56, 189, 248, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.12) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Header */
+    .header-container {
+      max-width: 1100px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      padding-bottom: 28px;
+    }
+
+    .org-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--cyan);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 30%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .problem-statement-badge {
+      display: inline-block;
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 850px;
+      line-height: 1.6;
+    }
+
+    .problem-id {
+      color: var(--amber);
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Flowchart Container */
+    .flowchart-wrapper {
+      max-width: 1040px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      position: relative;
+    }
+
+    /* Node Styles */
+    .flow-node {
+      width: 100%;
+      max-width: 720px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px 24px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 20px var(--glow-cyan);
+      position: relative;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(12px);
+    }
+
+    .flow-node:hover {
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.35);
+    }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .node-step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .node-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 19px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .node-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .node-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .tag-cyan { background: rgba(56, 189, 248, 0.12); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.25); }
+    .tag-emerald { background: rgba(16, 185, 129, 0.12); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.25); }
+    .tag-purple { background: rgba(192, 132, 252, 0.12); color: var(--purple); border: 1px solid rgba(192, 132, 252, 0.25); }
+    .tag-amber { background: rgba(245, 158, 11, 0.12); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.25); }
+    .tag-rose { background: rgba(244, 63, 94, 0.12); color: var(--rose); border: 1px solid rgba(244, 63, 94, 0.25); }
+
+    /* Vertical Connectors */
+    .connector-v {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 38px;
+      position: relative;
+    }
+
+    .line-v {
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.8), rgba(56, 189, 248, 0.3));
+    }
+
+    .arrow-v {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid var(--cyan);
+      margin-top: -3px;
+    }
+
+    /* 3-Branch Multi-Sensor Section */
+    .branch-split-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 4px 0;
+    }
+
+    .branch-horizontal-bar {
+      width: 82%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--emerald) 0%, var(--purple) 50%, var(--cyan) 100%);
+      position: relative;
+    }
+
+    .branch-columns-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 14px;
+    }
+
+    .branch-card {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .branch-card.rgb-thermal {
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .branch-card.rgb-thermal:hover {
+      border-color: var(--emerald);
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.25);
+    }
+
+    .branch-card.acoustics {
+      border: 1px solid rgba(192, 132, 252, 0.35);
+    }
+    .branch-card.acoustics:hover {
+      border-color: var(--purple);
+      box-shadow: 0 0 24px rgba(192, 132, 252, 0.25);
+    }
+
+    .branch-card.gpr {
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .branch-card.gpr:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.25);
+    }
+
+    .branch-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .branch-card.rgb-thermal .branch-title { color: var(--emerald); }
+    .branch-card.acoustics .branch-title { color: var(--purple); }
+    .branch-card.gpr .branch-title { color: var(--cyan); }
+
+    .branch-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Convergence to Victim Identification */
+    .branch-converge-bar {
+      width: 82%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--emerald) 0%, var(--purple) 50%, var(--cyan) 100%);
+      margin-top: 14px;
+      position: relative;
+    }
+
+    /* Special Highlight Nodes */
+    .node-victim {
+      border: 1.5px solid rgba(244, 63, 94, 0.5);
+      background: linear-gradient(135deg, rgba(30, 15, 25, 0.95), rgba(15, 23, 42, 0.95));
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 25px rgba(244, 63, 94, 0.25);
+    }
+    .node-victim:hover {
+      border-color: var(--rose);
+      box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.9), 0 0 35px rgba(244, 63, 94, 0.4);
+    }
+    .node-victim .node-title { color: #ffe4e6; }
+    .node-victim .node-step-num { background: rgba(244, 63, 94, 0.15); color: var(--rose); border-color: rgba(244, 63, 94, 0.4); }
+
+    .node-dashboard {
+      border: 1.5px solid rgba(56, 189, 248, 0.6);
+      background: linear-gradient(135deg, rgba(8, 28, 48, 0.95), rgba(15, 23, 42, 0.95));
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.35);
+    }
+
+    /* Bottom actions bar */
+    .bottom-actions {
+      margin-top: 40px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .btn-action {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+        padding: 0;
+      }
+      .flow-node, .branch-card {
+        background: #fff;
+        border: 1px solid #ccc;
+        box-shadow: none;
+      }
+      .node-title, .branch-title {
+        color: #000 !important;
+      }
+      .node-desc, .branch-desc {
+        color: #333 !important;
+      }
+      .bottom-actions {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header-container">
+    <div class="org-pill">
+      <span>QUALCOMM INC.</span> • <span>ROBOTICS & DRONES</span> • <span>HARDWARE</span>
+    </div>
+    <h1>AEGIS-SAR OPERATIONAL FLOWCHART</h1>
+    <div class="problem-statement-badge">
+      <span class="problem-id">PROBLEM STATEMENT ID #26177:</span>
+      A deployable AI-powered autonomous drone that aids search-and-rescue operations by detecting people and hazards, thereby improving responder safety and reducing victim discovery time.
+    </div>
+  </header>
+
+  <!-- Flowchart Structure -->
+  <main class="flowchart-wrapper">
+
+    <!-- STEP 1: Hazard Classification -->
+    <div class="flow-node">
+      <div class="node-header">
+        <span class="node-step-num">STAGE 01</span>
+        <h2 class="node-title">Hazard Classification & Detection</h2>
+      </div>
+      <p class="node-desc">
+        Real-time terrain and threat reconnaissance via autonomous drone sweep. Detects secondary hazards before deploying human responders: active wildfires, high-voltage downed power lines, flash flood torrents, and unstable structural slopes.
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-rose">Thermal Flame Segment</span>
+        <span class="tag tag-amber">115kV Cable Hough Transform</span>
+        <span class="tag tag-cyan">DEM Slope Failure Grading</span>
+        <span class="tag tag-emerald">Forward LiDAR Obstacle Avoidance</span>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="connector-v"><div class="line-v"></div><div class="arrow-v"></div></div>
+
+    <!-- STEP 2: Geo Annotation -->
+    <div class="flow-node">
+      <div class="node-header">
+        <span class="node-step-num">STAGE 02</span>
+        <h2 class="node-title">Geo-Annotation (GPS Mapping & SLAM)</h2>
+      </div>
+      <p class="node-desc">
+        Real-time spatial georeferencing converting camera pixel coordinate frames $(u, v)$ to global WGS84 Geodetic Coordinates (Lat, Lon, Altitude AGL). Supports both open-sky RTK GPS and GPS-denied Visual-Inertial Odometry (VIO SLAM).
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-cyan">Dual-Band 3D-RTK GNSS</span>
+        <span class="tag tag-purple">OpenVINS Visual-Inertial SLAM</span>
+        <span class="tag tag-emerald">WGS84 Camera Ray Casting</span>
+        <span class="tag tag-amber">Real-Time Cost-Field Map</span>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="connector-v"><div class="line-v"></div><div class="arrow-v"></div></div>
+
+    <!-- STEP 3: Hexapods / Deployable Units -->
+    <div class="flow-node">
+      <div class="node-header">
+        <span class="node-step-num">STAGE 03</span>
+        <h2 class="node-title">Hexapods & Deployable Robotic Units</h2>
+      </div>
+      <p class="node-desc">
+        Heterogeneous air-ground teaming. High-payload autonomous hexacopter performs macro-aerial sweeping while miniature ground hexapod micro-rovers / drop-probes are deployed into collapsed concrete voids and narrow crevices.
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-cyan">Autonomous Hexacopter UAV</span>
+        <span class="tag tag-emerald">Ground Rubble Hexapod Rovers</span>
+        <span class="tag tag-purple">Decentralized LoRa/ESP-NOW Mesh</span>
+        <span class="tag tag-amber">Autonomous Frontier Search</span>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="connector-v"><div class="line-v"></div><div class="arrow-v"></div></div>
+
+    <!-- STEP 4: Detection Base Analysis -->
+    <div class="flow-node" style="border-color: var(--purple); box-shadow: 0 0 25px rgba(192, 132, 252, 0.25);">
+      <div class="node-header">
+        <span class="node-step-num" style="background: rgba(192, 132, 252, 0.15); color: var(--purple); border-color: rgba(192, 132, 252, 0.4);">STAGE 04</span>
+        <h2 class="node-title">Detection Base Analysis (On-Device Qualcomm NPU)</h2>
+      </div>
+      <p class="node-desc">
+        Zero-cloud edge compute running on the Qualcomm Snapdragon RB5 Platform / Hexagon 698 DSP (15 TOPS). Executes real-time multi-modal neural models across 3 concurrent sensing branches:
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-purple">Qualcomm SNPE / TFLite Edge</span>
+        <span class="tag tag-cyan">Zero-Latency Local Inference</span>
+        <span class="tag tag-emerald">Tri-Modal Sensor Ingestion</span>
+      </div>
+    </div>
+
+    <!-- 3-Way Branch Connector -->
+    <div class="branch-split-wrapper">
+      <div class="connector-v" style="height: 18px;"><div class="line-v"></div></div>
+      <div class="branch-horizontal-bar"></div>
+      
+      <!-- Branch Cards (RGB+Thermal, Acoustics, GPR Radar) -->
+      <div class="branch-columns-container">
+        <!-- Branch A -->
+        <div class="branch-card rgb-thermal">
+          <div class="branch-title">
+            <span>📷</span> RGB + Thermal
+          </div>
+          <p class="branch-desc">
+            • 4K Optical YOLOv8-Pose body keypoints.<br>
+            • FLIR LWIR uncooled bolometer (8–14μm).<br>
+            • 310K ($37^\circ\text{C}$) human body heat signature.<br>
+            • Discards sun-heated rock & vehicle engine false positives.
+          </p>
+          <div class="node-tags">
+            <span class="tag tag-emerald">310K Core Heat</span>
+            <span class="tag tag-cyan">YOLO Pose</span>
+          </div>
+        </div>
+
+        <!-- Branch B -->
+        <div class="branch-card acoustics">
+          <div class="branch-title">
+            <span>🎙️</span> Acoustics Array
+          </div>
+          <p class="branch-desc">
+            • 4-channel MEMS microphone beamforming.<br>
+            • Bandpass filter for human distress vocals (300Hz – 3400Hz).<br>
+            • Triangulates screams & rhythmic rubble tapping through structural collapse.
+          </p>
+          <div class="node-tags">
+            <span class="tag tag-purple">300Hz-3.4kHz</span>
+            <span class="tag tag-rose">GCC-PHAT DOA</span>
+          </div>
+        </div>
+
+        <!-- Branch C -->
+        <div class="branch-card gpr">
+          <div class="branch-title">
+            <span>📡</span> GPR / mmWave Radar
+          </div>
+          <p class="branch-desc">
+            • Ultra-Wideband (UWB) / 60GHz pulsed radar.<br>
+            • Penetrates 1m – 3m non-metallic debris.<br>
+            • Doppler micromotion extracts thoracic chest expansion (vital respiration & pulse).
+          </p>
+          <div class="node-tags">
+            <span class="tag tag-cyan">1-3m Rubble</span>
+            <span class="tag tag-amber">Vitals Doppler</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Converge Line -->
+      <div class="branch-converge-bar"></div>
+      <div class="connector-v" style="height: 22px;"><div class="line-v"></div><div class="arrow-v"></div></div>
+    </div>
+
+    <!-- STEP 5: Victim Identification -->
+    <div class="flow-node node-victim">
+      <div class="node-header">
+        <span class="node-step-num">STAGE 05</span>
+        <h2 class="node-title">Victim Identification & Vitals Localization</h2>
+      </div>
+      <p class="node-desc">
+        Multi-modal Bayesian evidence fusion combines optical silhouette, thermal gradient, acoustic DOA, and radar vitals. Computes transparent Section 8 triage rating ($T = w_1 T_{core} + w_2 dB + w_3 D_{haz}^{-1} + w_4 R_{struct} + w_5 \Delta t$) to categorize victims into Immediate (P1), Delayed (P2), or Minimal (P3).
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-rose">Confirmed Living Survivor</span>
+        <span class="tag tag-amber">Triage Priority Ranking (P1/P2/P3)</span>
+        <span class="tag tag-cyan">Exact 3D Coordinates (Lat/Lon/Alt)</span>
+        <span class="tag tag-emerald">Vitals Vitality Index</span>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="connector-v"><div class="line-v"></div><div class="arrow-v"></div></div>
+
+    <!-- STEP 6: Optimal Rescue Route -->
+    <div class="flow-node">
+      <div class="node-header">
+        <span class="node-step-num">STAGE 06</span>
+        <h2 class="node-title">Optimal Rescue Route Generation</h2>
+      </div>
+      <p class="node-desc">
+        Autonomous path planning running constrained A* / Dijkstra algorithms over the dynamic hazard cost-field. Computes safe access corridors for ground rescue personnel and air-evacuation zones (LZ), strictly enforcing 15-meter buffer keep-out zones around active fires and unstable landslides.
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-emerald">Constrained A* Pathfinding</span>
+        <span class="tag tag-amber">Hazard Keep-Out Buffer (>15m)</span>
+        <span class="tag tag-cyan">Ground Access + Air Evac LZ</span>
+        <span class="tag tag-purple">Terrain Elevation Effort Minimization</span>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="connector-v"><div class="line-v"></div><div class="arrow-v"></div></div>
+
+    <!-- STEP 7: Dashboard -->
+    <div class="flow-node node-dashboard">
+      <div class="node-header">
+        <span class="node-step-num">STAGE 07</span>
+        <h2 class="node-title">Tactical Command & Control (C2) Dashboard</h2>
+      </div>
+      <p class="node-desc">
+        Unified real-time mission management portal for NDRF, SDRF, and disaster commanders. Integrates dual 4K/LWIR video feeds, Primary Flight Display (PFD) avionics HUD, live 3D situation awareness map, prioritized triage dispatch queue, and offline JSON incident reporting.
+      </p>
+      <div class="node-tags">
+        <span class="tag tag-cyan">WebGL 3D Situation Awareness</span>
+        <span class="tag tag-emerald">PFD Avionics HUD (Heading/AGL/Pitch)</span>
+        <span class="tag tag-rose">Priority Triage Ledger</span>
+        <span class="tag tag-amber">Downloadable Mission Audit JSON</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Actions -->
+  <div class="bottom-actions">
+    <a href="/" class="btn-action">
+      <span>🕹️</span> Return to 3D Tactical Simulation
+    </a>
+    <button onclick="window.print()" class="btn-action">
+      <span>🖨️</span> Print / Save as PDF
+    </button>
+  </div>
+
+</body>
+</html>
