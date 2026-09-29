@@ -5,6 +5,7 @@
  */
 import * as THREE from 'three';
 import { getTerrainHeight } from './scene.js';
+import { approach, angleDelta, brakingSpeed } from './simulation-math.js';
 
 const DRONE_SPEED = 6;         // m/s
 const DRONE_TURN_SPEED = 2;    // rad/s
@@ -60,7 +61,8 @@ export class Drone {
     this._buildTrail();
 
     // Input handlers
-    this._setupInput();
+    if (id === 'AEGIS-1') this._setupInput();
+    this.simTime = 0;
   }
 
   _buildMesh() {
@@ -250,8 +252,8 @@ export class Drone {
 
     this.group.add(gimbalBase);
 
-    // High-Intensity Tactical Search Spotlight
-    this.spotlight = new THREE.SpotLight(0xffeedd, 3.5, 40, Math.PI / 5, 0.6, 1.8);
+    // Tactical Search Spotlight — focused beam, reduced intensity to avoid terrain washout
+    this.spotlight = new THREE.SpotLight(0xffeedd, 1.5, 30, Math.PI / 7, 0.7, 2.0);
     this.spotlight.position.set(0, -0.1, -0.1);
     this.spotlight.target.position.set(0, -12, 4);
     this.group.add(this.spotlight);
@@ -305,16 +307,19 @@ export class Drone {
 
   _setupInput() {
     document.addEventListener('keydown', (e) => {
+      if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)) return;
       this.keys[e.key.toLowerCase()] = true;
     });
     document.addEventListener('keyup', (e) => {
       this.keys[e.key.toLowerCase()] = false;
     });
 
+    window.addEventListener('blur', () => { this.keys = {}; });
+
     // Pointer lock for mouse look
     const canvas = document.getElementById('main-canvas');
     canvas.addEventListener('click', () => {
-      if (!this.isPointerLocked) {
+      if (!this.isPointerLocked && this.mode === 'manual') {
         canvas.requestPointerLock();
       }
     });
@@ -350,10 +355,12 @@ export class Drone {
   update(dt) {
     if (this.battery <= 0) return;
 
+    this.simTime += dt;
+    // Illustrative energy model, approximately 22 minutes at hover.
     // Battery drain
-    this.battery = Math.max(0, this.battery - dt * 0.15);
+    this.battery = Math.max(0, this.battery - dt * (100 / (22 * 60)) * (1 + this.velocity.length() * 0.035));
     // Comms quality fluctuation
-    this.commsQuality = 85 + Math.sin(Date.now() * 0.001) * 10 + Math.random() * 5;
+    this.commsQuality = Math.max(35, 99 - this.position.length() * 0.35 + Math.sin(this.simTime * 0.6) * 2);
 
     if (this.mode === 'manual') {
       this._updateManual(dt);
@@ -363,7 +370,7 @@ export class Drone {
 
     // Apply velocity with damping
     this.position.add(this.velocity.clone().multiplyScalar(dt));
-    this.velocity.multiplyScalar(DRONE_DAMPING);
+    // Velocity damping is integrated in the time-based controller.
 
     // Clamp to mountain scene bounds
     this.position.x = Math.max(-55, Math.min(55, this.position.x));
@@ -399,7 +406,7 @@ export class Drone {
     }
 
     // Hover bob
-    this.group.position.y += Math.sin(Date.now() * 0.003) * 0.02;
+    this.group.position.y += Math.sin(this.simTime * 3) * 0.02;
 
     // Track distance
     this.distanceTraveled += this.velocity.length() * dt;
@@ -408,67 +415,48 @@ export class Drone {
     this._updateTrail();
   }
 
-  _updateManual(dt) {
-    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
-    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
+  _steer(desired, dt) {
+    const change = desired.clone().sub(this.velocity);
+    const limit = 2.8 * dt;
+    if (change.length() > limit) change.setLength(limit);
+    this.velocity.add(change);
+    // Small residual gust after the idealized position controller compensates.
+    this.velocity.x += Math.sin(this.simTime * 1.7) * 0.035 * dt;
+  }
 
-    if (this.keys['w']) this.velocity.add(forward.multiplyScalar(DRONE_SPEED * dt));
-    if (this.keys['s']) this.velocity.add(forward.multiplyScalar(-DRONE_SPEED * dt));
-    if (this.keys['a']) this.velocity.add(right.multiplyScalar(-DRONE_SPEED * dt));
-    if (this.keys['d']) this.velocity.add(right.multiplyScalar(DRONE_SPEED * dt));
-    if (this.keys['q'] || this.keys[' ']) this.velocity.y += DRONE_ASCEND_SPEED * dt;
-    if (this.keys['e']) this.velocity.y -= DRONE_ASCEND_SPEED * dt;
+  _updateManual(dt) {
+    const desired = new THREE.Vector3(
+      Number(!!this.keys.d) - Number(!!this.keys.a),
+      0, Number(!!this.keys.s) - Number(!!this.keys.w));
+    if (desired.lengthSq()) desired.normalize().multiplyScalar(DRONE_SPEED);
+    desired.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
+    desired.y = (Number(!!this.keys.q) - Number(!!this.keys.e)) * DRONE_ASCEND_SPEED;
+    this._steer(desired, dt);
   }
 
   _updateAutonomous(dt) {
-    if (this.waypoints.length === 0) return;
-
-    if (this.isInvestigating && this.investigateTarget) {
-      // Fly toward investigation target
-      const dir = this.investigateTarget.clone().sub(this.position);
-      dir.y = 0;
-      const dist = dir.length();
-
-      if (dist > 1) {
-        dir.normalize().multiplyScalar(DRONE_SPEED * 0.5 * dt);
-        this.velocity.add(dir);
-        this.yaw = Math.atan2(-dir.x, -dir.z);
-      } else {
-        // Circle/hover at target
+    const target = this.isInvestigating ? this.investigateTarget : this.waypoints[this.waypointIndex];
+    if (!target) { this._steer(new THREE.Vector3(), dt); return; }
+    const delta = new THREE.Vector3(target.x - this.position.x, 0, target.z - this.position.z);
+    const distance = delta.length();
+    const desired = delta.clone().normalize().multiplyScalar(brakingSpeed(distance, 2.2, this.isInvestigating ? 2.5 : 4.5));
+    const ahead = this.position.clone().addScaledVector(this.velocity, 1.2);
+    const ground = Math.max(getTerrainHeight(this.position.x, this.position.z), getTerrainHeight(ahead.x, ahead.z));
+    desired.y = THREE.MathUtils.clamp((ground + DEFAULT_ALTITUDE - this.position.y) * 1.5, -2, 3);
+    this._steer(desired, dt);
+    if (distance > 0.5) {
+      const error = angleDelta(this.yaw, Math.atan2(-delta.x, -delta.z));
+      this.yaw += THREE.MathUtils.clamp(error, -DRONE_TURN_SPEED * dt, DRONE_TURN_SPEED * dt);
+    }
+    this.pitch = approach(this.pitch, -Math.hypot(this.velocity.x, this.velocity.z) * 0.045, 3, dt);
+    if (distance < 0.8) {
+      if (this.isInvestigating) {
         this.investigateTimer -= dt;
-        this.yaw += dt * 0.5; // slow rotation to scan
         if (this.investigateTimer <= 0) {
-          this.isInvestigating = false;
-          this.investigateTarget = null;
-          this.patrolPhase = 'exploring';
+          this.isInvestigating = false; this.investigateTarget = null; this.patrolPhase = 'exploring';
         }
-      }
-      return;
+      } else this.waypointIndex = (this.waypointIndex + 1) % this.waypoints.length;
     }
-
-    // Standard waypoint navigation
-    const target = this.waypoints[this.waypointIndex];
-    if (!target) return;
-
-    const dir = new THREE.Vector3(target.x, this.position.y, target.z).sub(this.position);
-    dir.y = 0;
-    const dist = dir.length();
-
-    if (dist < 2) {
-      this.waypointIndex = (this.waypointIndex + 1) % this.waypoints.length;
-    } else {
-      dir.normalize().multiplyScalar(DRONE_SPEED * 0.6 * dt);
-      this.velocity.add(dir);
-      // Smoothly rotate toward target
-      const targetYaw = Math.atan2(-dir.x, -dir.z);
-      this.yaw += (targetYaw - this.yaw) * 3 * dt;
-    }
-
-    // Terrain-following altitude hold
-    const groundY = getTerrainHeight(this.position.x, this.position.z);
-    const desiredAlt = groundY + DEFAULT_ALTITUDE;
-    const altError = desiredAlt - this.position.y;
-    this.velocity.y += altError * 3.5 * dt;
   }
 
   _updateTrail() {

@@ -9,6 +9,8 @@
  * - Tactical emergency SAR vehicle with flashing beacons & high-voltage lattice pylon
  */
 import * as THREE from 'three';
+import { noise2, seededRandom } from './simulation-math.js';
+const random = seededRandom(25084);
 
 // ── Object Registry (for Sensor & Thermal Integration) ───────────
 export const objectRegistry = new Map();
@@ -84,14 +86,14 @@ let terrainTextures = null;
 function generateProceduralTerrainTextures() {
   const size = 1024;
 
-  // 1. Diffuse Canvas (Alpine slate rock, gravel, pine soil, and dark wet silt)
+  // 1. Diffuse Canvas — dark earth, wet rock, muddy silt
   const diffCanvas = document.createElement('canvas');
   diffCanvas.width = size;
   diffCanvas.height = size;
   const diffCtx = diffCanvas.getContext('2d');
 
-  // Fill base mountain soil tone
-  diffCtx.fillStyle = '#262420';
+  // Dark mountain earth base
+  diffCtx.fillStyle = '#1a1814';
   diffCtx.fillRect(0, 0, size, size);
 
   const imgData = diffCtx.getImageData(0, 0, size, size);
@@ -123,27 +125,32 @@ function generateProceduralTerrainTextures() {
       const v = y / size;
 
       // Multi-octave organic noise
-      const n1 = Math.sin(u * 28.0) * Math.cos(v * 28.0);
-      const n2 = Math.sin(u * 64.0 + 1.4) * Math.sin(v * 64.0 + 0.8) * 0.5;
-      const n3 = Math.sin(u * 140.0) * Math.cos(v * 140.0) * 0.25;
-      const n4 = (Math.random() - 0.5) * 0.15; // micro-grain
-      const hVal = (n1 + n2 + n3 + n4 + 1.8) / 3.6;
+      const n1 = noise2(u * 12, v * 12);
+      const n2 = noise2(u * 31, v * 31) * 0.5;
+      const n3 = noise2(u * 83, v * 83) * 0.25;
+      const n4 = noise2(u * 160, v * 160) * 0.12; // fine gravel detail
+      const n5 = (random() - 0.5) * 0.08; // micro-grain
+      const hVal = (n1 + n2 + n3 + n4 + n5 + 1.95) / 3.9;
       heightBuffer[y * size + x] = Math.max(0, Math.min(1, hVal));
 
       const idx = (y * size + x) * 4;
 
-      // Rock grain and soil variation
-      const rBase = 46 + Math.round(hVal * 42);
-      const gBase = 44 + Math.round(hVal * 38);
-      const bBase = 38 + Math.round(hVal * 34);
+      // Darker, warmer earth tones — raw soil, wet clay, dark gravel
+      const warmShift = noise2(u * 6, v * 8) * 0.15;
+      const rBase = 68 + Math.round(hVal * 52 + warmShift * 30);
+      const gBase = 60 + Math.round(hVal * 44 + warmShift * 18);
+      const bBase = 48 + Math.round(hVal * 32);
 
       data[idx]     = Math.min(255, rBase);
       data[idx + 1] = Math.min(255, gBase);
       data[idx + 2] = Math.min(255, bBase);
       data[idx + 3] = 255;
 
-      // Roughness: rocks (0.85-0.95), slick ground (0.5)
-      const rVal = Math.round((0.72 + hVal * 0.25) * 255);
+      // Roughness: rough rock (0.88-0.98), wet mud patches (0.4-0.55)
+      const wetPatch = noise2(u * 20, v * 20);
+      const rVal = wetPatch > 0.5
+        ? Math.round((0.40 + (wetPatch - 0.5) * 0.3) * 255)  // slick wet
+        : Math.round((0.82 + hVal * 0.16) * 255);              // rough rock
       roughData[idx]     = rVal;
       roughData[idx + 1] = rVal;
       roughData[idx + 2] = rVal;
@@ -151,7 +158,7 @@ function generateProceduralTerrainTextures() {
     }
   }
 
-  // Calculate Normal Map from height buffer (Sobel operator)
+  // Calculate Normal Map from height buffer (Sobel operator, stronger relief)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const left  = heightBuffer[y * size + ((x - 1 + size) % size)];
@@ -159,8 +166,8 @@ function generateProceduralTerrainTextures() {
       const up    = heightBuffer[((y - 1 + size) % size) * size + x];
       const down  = heightBuffer[((y + 1) % size) * size + x];
 
-      const dx = (right - left) * 2.8;
-      const dy = (down - up) * 2.8;
+      const dx = (right - left) * 4.2;
+      const dy = (down - up) * 4.2;
       const dz = 1.0;
       const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
@@ -183,17 +190,17 @@ function generateProceduralTerrainTextures() {
   const diffTex = new THREE.CanvasTexture(diffCanvas);
   diffTex.wrapS = THREE.RepeatWrapping;
   diffTex.wrapT = THREE.RepeatWrapping;
-  diffTex.repeat.set(14, 14);
+  diffTex.repeat.set(18, 18);
 
   const normTex = new THREE.CanvasTexture(normCanvas);
   normTex.wrapS = THREE.RepeatWrapping;
   normTex.wrapT = THREE.RepeatWrapping;
-  normTex.repeat.set(14, 14);
+  normTex.repeat.set(18, 18);
 
   const roughTex = new THREE.CanvasTexture(roughCanvas);
   roughTex.wrapS = THREE.RepeatWrapping;
   roughTex.wrapT = THREE.RepeatWrapping;
-  roughTex.repeat.set(14, 14);
+  roughTex.repeat.set(18, 18);
 
   return { diffuse: diffTex, normal: normTex, roughness: roughTex };
 }
@@ -260,7 +267,7 @@ function createLandslideTerrain(scene) {
   }
 
   const sizeX = 140, sizeZ = 140;
-  const segments = 130;
+  const segments = 220;
   const geo = new THREE.PlaneGeometry(sizeX, sizeZ, segments, segments);
   geo.rotateX(-Math.PI / 2);
 
@@ -278,19 +285,50 @@ function createLandslideTerrain(scene) {
     const isSlideChute = (x > -24 && x < 24 && inSlideZ > 0.18);
 
     if (isSlideChute) {
-      // Landslide deposit: saturated dark wet clay, mud, displaced earth
-      const mudDarkness = 0.10 + Math.random() * 0.06;
-      color.setRGB(mudDarkness * 1.3, mudDarkness * 0.95, mudDarkness * 0.65); // Realistic dark wet soil
+      // Multi-zone landslide debris — dark wet clay, exposed subsoil, dried crust
+      const n = noise2(x * 0.22, z * 0.22);
+      const n2 = noise2(x * 0.7, z * 0.65);
+      const freshScar = Math.max(0, 1 - Math.abs(x - 4) / 14); // fresh exposed earth near center
+
+      // Base: dark saturated mud
+      let mr = 0.14 + n * 0.04;
+      let mg = 0.11 + n * 0.025;
+      let mb = 0.07 + n * 0.015;
+
+      // Fresh exposed subsoil — reddish-brown clay
+      mr += freshScar * 0.08 * (0.5 + n2 * 0.5);
+      mg += freshScar * 0.03;
+
+      // Wet runnel channels — darker and slightly glossy
+      const wetChannel = noise2(x * 1.4, z * 0.5);
+      if (wetChannel > 0.45) {
+        mr *= 0.7; mg *= 0.65; mb *= 0.6;
+      }
+
+      // Dried crust patches — lighter tan
+      const dryCrust = noise2(x * 0.5 + 5, z * 0.5 + 3);
+      if (dryCrust > 0.55 && freshScar < 0.3) {
+        mr += 0.06; mg += 0.05; mb += 0.03;
+      }
+
+      color.setRGB(
+        Math.min(0.28, mr + random() * 0.015),
+        Math.min(0.22, mg + random() * 0.01),
+        Math.min(0.16, mb + random() * 0.008)
+      );
     } else if (y > 17) {
       // High rocky alpine ridge / exposed cold slate granite
-      const rock = 0.32 + Math.random() * 0.08;
-      color.setRGB(rock * 0.95, rock * 1.0, rock * 1.08);
+      const rock = 0.22 + random() * 0.06;
+      const rockN = noise2(x * 0.3, z * 0.3);
+      color.setRGB(rock * 0.9 + rockN * 0.03, rock * 0.92, rock * 0.95);
     } else if (y > 7) {
-      // Scree and subalpine heather
-      color.setRGB(0.20, 0.22, 0.17);
+      // Scree and subalpine heather — darker
+      const screeN = noise2(x * 0.25, z * 0.25);
+      color.setRGB(0.13 + screeN * 0.03, 0.15 + screeN * 0.02, 0.11 + screeN * 0.015);
     } else {
-      // Valley vegetation and rich mountain soil
-      color.setRGB(0.14, 0.18, 0.12);
+      // Valley vegetation and rich mountain soil — dark forest floor
+      const vegN = noise2(x * 0.18, z * 0.18);
+      color.setRGB(0.08 + vegN * 0.03, 0.12 + vegN * 0.04, 0.07 + vegN * 0.02);
     }
 
     colors.push(color.r, color.g, color.b);
@@ -303,17 +341,17 @@ function createLandslideTerrain(scene) {
     vertexColors: true,
     map: terrainTextures.diffuse,
     normalMap: terrainTextures.normal,
-    normalScale: new THREE.Vector2(1.2, 1.2),
+    normalScale: new THREE.Vector2(2.0, 2.0),
     roughnessMap: terrainTextures.roughness,
-    roughness: 0.82,
-    metalness: 0.06,
+    roughness: 0.92,
+    metalness: 0.02,
     flatShading: false,
-    envMapIntensity: 0.4,
+    envMapIntensity: 0.25,
   });
 
   terrainMesh = new THREE.Mesh(geo, terrainMat);
   terrainMesh.receiveShadow = true;
-  terrainMesh.castShadow = false;
+  terrainMesh.castShadow = true;
   scene.add(terrainMesh);
   registerObject('landslide_terrain', terrainMesh, 'terrain', 295);
 
@@ -369,11 +407,11 @@ function createDistantMountains(scene) {
     // Natural mountain color zoning
     if (y > 44) {
       // Snow-covered glaciated alpine peaks
-      const snow = 0.70 + Math.random() * 0.12;
-      col.setRGB(snow * 0.95, snow * 0.98, snow * 1.05);
+      const snow = 0.70 + random() * 0.12;
+      col.setRGB(0.24, 0.29, 0.23);
     } else if (y > 24) {
       // Rugged bare granite cliffs
-      const rock = 0.24 + Math.random() * 0.08;
+      const rock = 0.24 + random() * 0.08;
       col.setRGB(rock, rock * 1.05, rock * 1.15);
     } else if (y > 12) {
       // Subalpine scree & timberline
@@ -404,16 +442,16 @@ function createDistantMountains(scene) {
 // ── Mountain Atmospheric Sky Dome & Lighting ───────────────────────
 function createAtmosphere(scene) {
   // Fog matches horizon color perfectly for seamless aerial depth
-  scene.fog = new THREE.FogExp2(0x324454, 0.0068);
+  scene.fog = new THREE.FogExp2(0xa4b3b8, 0.0045);
 
   // Daylight overcast mountain sky dome
   const skyGeo = new THREE.SphereGeometry(320, 32, 24);
   const skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     uniforms: {
-      zenithColor:  { value: new THREE.Color(0x162332) }, // cold slate alpine zenith
-      midColor:     { value: new THREE.Color(0x28384a) }, // overcast mountain cloud bank
-      horizonColor: { value: new THREE.Color(0x324454) }, // matches fog
+      zenithColor:  { value: new THREE.Color(0x708f9e) }, // cold slate alpine zenith
+      midColor:     { value: new THREE.Color(0x96aab5) }, // overcast mountain cloud bank
+      horizonColor: { value: new THREE.Color(0xa4b3b8) }, // matches fog
       sunGlow:      { value: new THREE.Color(0xffe2bf) }, // warm dawn break through clouds
       sunDir:       { value: new THREE.Vector3(35, 55, 25).normalize() },
     },
@@ -457,11 +495,11 @@ function createAtmosphere(scene) {
 
 function createLighting(scene) {
   // Primary sun — warm disaster-dawn angle through storm break
-  const sun = new THREE.DirectionalLight(0xffdfb8, 1.35);
+  const sun = new THREE.DirectionalLight(0xffefd6, 2.8);
   sun.position.set(35, 55, 25);
   sun.castShadow = true;
-  sun.shadow.mapSize.width = 4096;
-  sun.shadow.mapSize.height = 4096;
+  sun.shadow.mapSize.width = 2048;
+  sun.shadow.mapSize.height = 2048;
   sun.shadow.camera.near = 1;
   sun.shadow.camera.far = 200;
   sun.shadow.camera.left = -70;
@@ -472,22 +510,22 @@ function createLighting(scene) {
   sun.shadow.normalBias = 0.02;
   scene.add(sun);
 
-  // Cold blue sky rim fill
-  const rimLight = new THREE.DirectionalLight(0x486688, 0.50);
+  // Cold blue sky rim fill — subdued
+  const rimLight = new THREE.DirectionalLight(0x384858, 0.30);
   rimLight.position.set(-40, 30, -30);
   scene.add(rimLight);
 
-  // Ground bounce
-  const fill = new THREE.DirectionalLight(0x4a3a28, 0.25);
+  // Ground bounce — very faint warm
+  const fill = new THREE.DirectionalLight(0x3a2a18, 0.12);
   fill.position.set(0, -10, 0);
   scene.add(fill);
 
-  // Overcast storm sky above, dark mud below
-  const hemi = new THREE.HemisphereLight(0x384a5c, 0x1e1610, 0.85);
+  // Overcast storm sky above, dark mud below — reduced to avoid washed-out look
+  const hemi = new THREE.HemisphereLight(0x8a9aa6, 0x3a2e20, 1.15);
   scene.add(hemi);
 
-  // Ambient fill
-  const ambient = new THREE.AmbientLight(0x141e28, 0.40);
+  // Ambient fill — minimal to preserve contrast and shadow depth
+  const ambient = new THREE.AmbientLight(0x6a7a82, 0.10);
   scene.add(ambient);
 }
 
@@ -567,21 +605,39 @@ function createGuardrails(scene) {
 
 // ── Massive Boulders & Scree Field ───────────────────────────────
 function createBoulders(scene) {
-  const rockMat = mat('#3c3834', { roughness: 0.95 });
-
   const boulderConfigs = [
     { name: 'megalith_boulder_1', x: -4, z: -2, scale: [4.5, 3.2, 3.8], rot: [0.3, 1.2, 0.5], temp: 298 },
     { name: 'megalith_boulder_2', x: 2, z: 6, scale: [3.8, 2.6, 3.2], rot: [0.1, 0.8, -0.4], temp: 299 },
     { name: 'slide_boulder_3', x: -12, z: 4, scale: [2.8, 2.0, 2.4], rot: [0.4, 2.1, 0.2], temp: 297 },
     { name: 'slide_boulder_4', x: -8, z: -8, scale: [3.2, 2.2, 2.8], rot: [-0.2, 0.5, 0.3], temp: 298 },
-    { name: 'warm_rock', x: 4, z: -10, scale: [2.2, 1.5, 2.0], rot: [0.2, 1.4, 0.1], temp: 305 }, // False positive benchmark
+    { name: 'warm_rock', x: 4, z: -10, scale: [2.2, 1.5, 2.0], rot: [0.2, 1.4, 0.1], temp: 305 },
     { name: 'chute_boulder_6', x: 10, z: -2, scale: [3.0, 2.5, 2.8], rot: [0.5, 0.3, 0.6], temp: 299 },
   ];
 
   for (const b of boulderConfigs) {
-    const geo = new THREE.DodecahedronGeometry(1.0, 1);
+    // Higher subdivision + vertex displacement for organic, fractured rock shapes
+    const geo = new THREE.DodecahedronGeometry(1.0, 2);
+    const vPos = geo.attributes.position;
+    for (let i = 0; i < vPos.count; i++) {
+      const vx = vPos.getX(i), vy = vPos.getY(i), vz = vPos.getZ(i);
+      const n = noise2(vx * 3.8 + b.x, vz * 3.8 + b.z);
+      const n2 = noise2(vy * 7.2 + b.z, vx * 7.2 + b.x) * 0.5;
+      const disp = 1.0 + n * 0.18 + n2 * 0.12;
+      vPos.setXYZ(i, vx * disp, vy * disp, vz * disp);
+    }
+    geo.computeVertexNormals();
+
+    // Per-boulder color variation
+    const shade = 0.14 + random() * 0.06;
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(shade * 1.1, shade, shade * 0.85),
+      roughness: 0.92 + random() * 0.06,
+      metalness: 0.04,
+      flatShading: true,
+    });
+
     const mesh = new THREE.Mesh(geo, rockMat);
-    const y = getTerrainHeight(b.x, b.z) + (b.scale[1] * 0.4);
+    const y = getTerrainHeight(b.x, b.z) + (b.scale[1] * 0.35);
     mesh.position.set(b.x, y, b.z);
     mesh.scale.set(...b.scale);
     mesh.rotation.set(...b.rot);
@@ -595,26 +651,92 @@ function createBoulders(scene) {
     });
   }
 
-  // Scattered gravel hummocks (instanced rock debris)
-  const pebbleGeo = new THREE.DodecahedronGeometry(0.4, 0);
-  const pebbleMat = mat('#342f2a', { roughness: 1.0 });
-  const instancedRocks = new THREE.InstancedMesh(pebbleGeo, pebbleMat, 70);
+  // Scattered gravel hummocks — organic shapes with displacement
+  const pebbleGeo = new THREE.DodecahedronGeometry(0.4, 1);
+  const pvPos = pebbleGeo.attributes.position;
+  for (let i = 0; i < pvPos.count; i++) {
+    const vx = pvPos.getX(i), vy = pvPos.getY(i), vz = pvPos.getZ(i);
+    const d = 1.0 + noise2(vx * 5.5, vz * 5.5) * 0.25;
+    pvPos.setXYZ(i, vx * d, vy * d * 0.7, vz * d);
+  }
+  pebbleGeo.computeVertexNormals();
+  const pebbleMat = mat('#2a2520', { roughness: 0.96, flat: true });
+  const instancedRocks = new THREE.InstancedMesh(pebbleGeo, pebbleMat, 140);
 
   const dummy = new THREE.Object3D();
-  for (let i = 0; i < 70; i++) {
-    const rx = (Math.random() - 0.5) * 44;
-    const rz = (Math.random() - 0.5) * 44;
-    const ry = getTerrainHeight(rx, rz) + 0.2;
+  for (let i = 0; i < 140; i++) {
+    const rx = (random() - 0.5) * 48;
+    const rz = (random() - 0.5) * 48;
+    const ry = getTerrainHeight(rx, rz) + 0.12;
     dummy.position.set(rx, ry, rz);
-    const s = 0.5 + Math.random() * 1.5;
-    dummy.scale.set(s, s * (0.6 + Math.random() * 0.8), s);
-    dummy.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+    const s = 0.3 + random() * 1.4;
+    dummy.scale.set(s * (0.8 + random() * 0.4), s * (0.4 + random() * 0.7), s * (0.8 + random() * 0.4));
+    dummy.rotation.set(random() * 3, random() * 3, random() * 3);
     dummy.updateMatrix();
     instancedRocks.setMatrixAt(i, dummy.matrix);
+    instancedRocks.setColorAt(i, new THREE.Color().setHSL(0.07 + random() * 0.04, 0.12, 0.10 + random() * 0.08));
   }
   instancedRocks.castShadow = true;
   instancedRocks.receiveShadow = true;
   scene.add(instancedRocks);
+
+  // Mud puddles — dark glossy patches in debris field
+  const puddleMat = new THREE.MeshStandardMaterial({
+    color: 0x0c0a08,
+    roughness: 0.08,
+    metalness: 0.6,
+    transparent: true,
+    opacity: 0.75,
+  });
+  const puddlePositions = [
+    [-3, 3], [1, -3], [-10, 0], [6, 8], [-6, -6], [8, -4], [-15, 6],
+    [0, 10], [-4, -10], [3, -7], [-8, 8], [5, 2],
+  ];
+  for (const [px, pz] of puddlePositions) {
+    const pGeo = new THREE.CircleGeometry(0.6 + random() * 1.2, 12);
+    pGeo.rotateX(-Math.PI / 2);
+    const puddle = new THREE.Mesh(pGeo, puddleMat);
+    puddle.position.set(px, getTerrainHeight(px, pz) + 0.06, pz);
+    puddle.rotation.y = random() * Math.PI * 2;
+    scene.add(puddle);
+  }
+
+  // Scattered rebar / bent metal debris in the slide area
+  const rebarMat = mat('#5a4a3a', { metalness: 0.7, roughness: 0.45 });
+  const rebarConfigs = [
+    { x: -2, z: 5, len: 2.2, rot: [0.8, 0.5, 0.3] },
+    { x: 6, z: -3, len: 1.8, rot: [0.2, 1.6, 0.6] },
+    { x: -11, z: -2, len: 2.5, rot: [0.5, 0.9, -0.4] },
+    { x: 1, z: -8, len: 1.5, rot: [1.1, 0.3, 0.7] },
+    { x: -5, z: 7, len: 2.0, rot: [0.4, 2.2, 0.1] },
+  ];
+  for (const rb of rebarConfigs) {
+    const rGeo = new THREE.CylinderGeometry(0.025, 0.025, rb.len, 6);
+    const rMesh = new THREE.Mesh(rGeo, rebarMat);
+    rMesh.position.set(rb.x, getTerrainHeight(rb.x, rb.z) + 0.3, rb.z);
+    rMesh.rotation.set(...rb.rot);
+    rMesh.castShadow = true;
+    scene.add(rMesh);
+  }
+
+  // Concrete chunk fragments
+  const concreteMat = mat('#4a4640', { roughness: 0.94, flat: true });
+  for (let i = 0; i < 12; i++) {
+    const cx = (random() - 0.5) * 30;
+    const cz = (random() - 0.5) * 26;
+    const cy = getTerrainHeight(cx, cz) + 0.15;
+    const cGeo = new THREE.BoxGeometry(
+      0.3 + random() * 0.8,
+      0.15 + random() * 0.35,
+      0.3 + random() * 0.7
+    );
+    const cMesh = new THREE.Mesh(cGeo, concreteMat);
+    cMesh.position.set(cx, cy, cz);
+    cMesh.rotation.set(random() * 1.5, random() * 3, random() * 1.5);
+    cMesh.castShadow = true;
+    cMesh.receiveShadow = true;
+    scene.add(cMesh);
+  }
 }
 
 // ── Realistic Alpine Conifer Trees & Snapped Timber ───────────────
@@ -644,7 +766,7 @@ function createAlpineSpruce(height, trunkRadius, foliageHex) {
       foliageMat
     );
     cone.position.y = trunkH * 0.35 + frac * (height * 0.60);
-    cone.rotation.y = i * 0.8 + Math.random() * 0.2;
+    cone.rotation.y = i * 0.8 + random() * 0.2;
     cone.castShadow = true;
     tree.add(cone);
   }
@@ -667,14 +789,14 @@ function createForestAndSnappedTrees(scene) {
   for (let i = 0; i < treePositions.length; i++) {
     const [tx, tz] = treePositions[i];
     const ty = getTerrainHeight(tx, tz);
-    const h = 5.5 + Math.random() * 5.0;
+    const h = 5.5 + random() * 5.0;
     const r = 0.16 + (h / 10.0) * 0.12;
     const col = needleColors[i % needleColors.length];
 
     const tree = createAlpineSpruce(h, r, col);
     tree.position.set(tx, ty, tz);
-    tree.rotation.y = Math.random() * Math.PI * 2;
-    tree.rotation.z = (Math.random() - 0.5) * 0.08; // subtle natural lean
+    tree.rotation.y = random() * Math.PI * 2;
+    tree.rotation.z = (random() - 0.5) * 0.08; // subtle natural lean
     scene.add(tree);
   }
 
@@ -845,23 +967,49 @@ function createBuriedInfrastructure(scene) {
 export let floodMesh = null;
 
 function createMudDamFloodPool(scene) {
-  const waterGeo = new THREE.PlaneGeometry(36, 26, 48, 48);
+  // Flat water plane with subtle vertex ripple deformation
+  const waterGeo = new THREE.PlaneGeometry(32, 22, 64, 64);
   waterGeo.rotateX(-Math.PI / 2);
 
+  // Add subtle pre-baked ripple displacement
+  const wPos = waterGeo.attributes.position;
+  for (let i = 0; i < wPos.count; i++) {
+    const wx = wPos.getX(i), wz = wPos.getZ(i);
+    // Gentle ripple height
+    const ripple = noise2(wx * 0.35, wz * 0.35) * 0.08 + noise2(wx * 1.2, wz * 1.2) * 0.03;
+    wPos.setY(i, wPos.getY(i) + ripple);
+  }
+  waterGeo.computeVertexNormals();
+
   const waterMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color('#1c2e3a'),
-    roughness: 0.08,
-    metalness: 0.82,
+    color: new THREE.Color('#182830'),
+    roughness: 0.05,
+    metalness: 0.75,
     transparent: true,
-    opacity: 0.85,
-    envMapIntensity: 1.4,
-    emissive: new THREE.Color(0.01, 0.04, 0.08),
-    emissiveIntensity: 0.3,
+    opacity: 0.80,
+    envMapIntensity: 0.8,
+    emissive: new THREE.Color(0.005, 0.02, 0.04),
+    emissiveIntensity: 0.15,
+    side: THREE.DoubleSide,
   });
 
   floodMesh = new THREE.Mesh(waterGeo, waterMat);
-  floodMesh.position.set(-28, 2.2, 8);
+  floodMesh.position.set(-28, 1.8, 8);
   scene.add(floodMesh);
+
+  // Muddy shoreline ring around the pool
+  const shoreMat = new THREE.MeshStandardMaterial({
+    color: 0x1a1510,
+    roughness: 0.35,
+    metalness: 0.15,
+    transparent: true,
+    opacity: 0.6,
+  });
+  const shoreGeo = new THREE.RingGeometry(10.5, 13.5, 32);
+  shoreGeo.rotateX(-Math.PI / 2);
+  const shore = new THREE.Mesh(shoreGeo, shoreMat);
+  shore.position.set(-28, 1.85, 8);
+  scene.add(shore);
 
   registerObject('flood_zone', floodMesh, 'flood', 293, {
     label: 'Mudflow Damming Reservoir — Flash Flood Surge',
@@ -968,11 +1116,11 @@ function createActiveFireHazard(scene) {
   const fireCol = new Float32Array(fireCount * 3);
 
   for (let i = 0; i < fireCount; i++) {
-    firePos[i*3]   = fX + (Math.random() - 0.5) * 1.5;
-    firePos[i*3+1] = fY + 0.2 + Math.random() * 5.0;
-    firePos[i*3+2] = fZ + (Math.random() - 0.5) * 1.5;
+    firePos[i*3]   = fX + (random() - 0.5) * 1.5;
+    firePos[i*3+1] = fY + 0.2 + random() * 5.0;
+    firePos[i*3+2] = fZ + (random() - 0.5) * 1.5;
 
-    const heat = Math.random();
+    const heat = random();
     fireCol[i*3]   = 1.0;
     fireCol[i*3+1] = heat * 0.75 + 0.2;
     fireCol[i*3+2] = heat * heat * 0.15;
@@ -1001,13 +1149,13 @@ function createActiveFireHazard(scene) {
   const smokeCol = new Float32Array(smokeCount * 3);
 
   for (let i = 0; i < smokeCount; i++) {
-    const h = Math.random() * 22.0;
+    const h = random() * 22.0;
     const spread = (h / 22.0) * 5.0 + 1.2;
-    smokePos[i*3]   = fX + (Math.random() - 0.5) * spread;
+    smokePos[i*3]   = fX + (random() - 0.5) * spread;
     smokePos[i*3+1] = fY + 3.0 + h;
-    smokePos[i*3+2] = fZ + (Math.random() - 0.5) * spread;
+    smokePos[i*3+2] = fZ + (random() - 0.5) * spread;
 
-    const shade = 0.12 + Math.random() * 0.10;
+    const shade = 0.12 + random() * 0.10;
     smokeCol[i*3]   = shade;
     smokeCol[i*3+1] = shade;
     smokeCol[i*3+2] = shade;
@@ -1051,20 +1199,20 @@ function createDynamicRockslide(scene) {
   const dummy = new THREE.Object3D();
 
   for (let i = 0; i < ROCK_PHYSICS_COUNT; i++) {
-    const rx = 13 + Math.random() * 8;
-    const ry = 16 + Math.random() * 8;
-    const rz = (Math.random() - 0.5) * 26;
+    const rx = 13 + random() * 8;
+    const ry = 16 + random() * 8;
+    const rz = (random() - 0.5) * 26;
     const pos = new THREE.Vector3(rx, ry, rz);
     const vel = new THREE.Vector3(
-      -(1.8 + Math.random() * 3.5),
-      -(2.5 + Math.random() * 4.0),
-      (Math.random() - 0.5) * 1.5
+      -(1.8 + random() * 3.5),
+      -(2.5 + random() * 4.0),
+      (random() - 0.5) * 1.5
     );
-    const rot = new THREE.Euler(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+    const rot = new THREE.Euler(random() * 3, random() * 3, random() * 3);
     const rSpeed = new THREE.Vector3(
-      (Math.random() - 0.5) * 6,
-      (Math.random() - 0.5) * 6,
-      (Math.random() - 0.5) * 6
+      (random() - 0.5) * 6,
+      (random() - 0.5) * 6,
+      (random() - 0.5) * 6
     );
 
     rockPositions.push(pos);
@@ -1074,8 +1222,8 @@ function createDynamicRockslide(scene) {
 
     dummy.position.copy(pos);
     dummy.rotation.copy(rot);
-    const s = 0.6 + Math.random() * 0.9;
-    dummy.scale.set(s, s * (0.7 + Math.random() * 0.6), s);
+    const s = 0.6 + random() * 0.9;
+    dummy.scale.set(s, s * (0.7 + random() * 0.6), s);
     dummy.updateMatrix();
     rockslideInstanced.setMatrixAt(i, dummy.matrix);
   }
@@ -1097,6 +1245,7 @@ export function createDisasterScene(scene) {
   createGuardrails(scene);
   createBoulders(scene);
   createForestAndSnappedTrees(scene);
+  createCanopy(scene);
   createBuriedInfrastructure(scene);
   createMudDamFloodPool(scene);
   createSurvivors(scene);
@@ -1113,11 +1262,11 @@ export function updateScene(time, dt) {
     const pos = fireParticles.geometry.attributes.position.array;
     for (let i = 0; i < pos.length / 3; i++) {
       pos[i * 3 + 1] += dt * 3.5;
-      pos[i * 3] += (Math.random() - 0.5) * 0.12;
+      pos[i * 3] += (random() - 0.5) * 0.12;
       if (pos[i * 3 + 1] > fireBaseY + 4.2) {
         pos[i * 3 + 1] = fireBaseY + 0.2;
-        pos[i * 3] = -1 + (Math.random() - 0.5) * 1.2;
-        pos[i * 3 + 2] = -6 + (Math.random() - 0.5) * 1.2;
+        pos[i * 3] = -1 + (random() - 0.5) * 1.2;
+        pos[i * 3 + 2] = -6 + (random() - 0.5) * 1.2;
       }
     }
     fireParticles.geometry.attributes.position.needsUpdate = true;
@@ -1132,9 +1281,9 @@ export function updateScene(time, dt) {
       pos[i * 3 + 2] += dt * 0.5;
 
       if (pos[i * 3 + 1] > fireBaseY + 24.0) {
-        pos[i * 3 + 1] = fireBaseY + 3.0 + Math.random() * 2.0;
-        pos[i * 3] = -1 + (Math.random() - 0.5) * 1.4;
-        pos[i * 3 + 2] = -6 + (Math.random() - 0.5) * 1.4;
+        pos[i * 3 + 1] = fireBaseY + 3.0 + random() * 2.0;
+        pos[i * 3] = -1 + (random() - 0.5) * 1.4;
+        pos[i * 3 + 2] = -6 + (random() - 0.5) * 1.4;
       }
     }
     smokePlumeRef.geometry.attributes.position.needsUpdate = true;
@@ -1148,6 +1297,7 @@ export function updateScene(time, dt) {
       const r = rockRotations[i];
       const rs = rockRotSpeeds[i];
 
+      v.y -= 9.81 * dt;
       p.x += v.x * dt;
       p.y += v.y * dt;
       p.z += v.z * dt;
@@ -1157,11 +1307,18 @@ export function updateScene(time, dt) {
       r.z += rs.z * dt;
 
       const groundY = getTerrainHeight(p.x, p.z);
-      if (p.y <= groundY + 0.2 || p.x < -22) {
-        // Respawn tumbling rock at top crown scarp
-        p.x = 13 + Math.random() * 8;
-        p.y = 16 + Math.random() * 8;
-        p.z = (Math.random() - 0.5) * 26;
+      if (p.y <= groundY + 0.38) {
+        p.y = groundY + 0.38;
+        const e = 0.15;
+        const normal = new THREE.Vector3(
+          -(getTerrainHeight(p.x + e, p.z) - getTerrainHeight(p.x - e, p.z)) / (2 * e),
+          1, -(getTerrainHeight(p.x, p.z + e) - getTerrainHeight(p.x, p.z - e)) / (2 * e)
+        ).normalize();
+        const impact = v.dot(normal);
+        if (impact < 0) v.addScaledVector(normal, -1.22 * impact);
+        v.multiplyScalar(Math.exp(-5 * dt));
+        rs.multiplyScalar(Math.exp(-4 * dt));
+        if (v.length() < 0.18) v.set(0, 0, 0);
       }
 
       rockDummy.position.copy(p);
@@ -1183,4 +1340,39 @@ export function updateScene(time, dt) {
     emergencyBeacons[0].material.emissiveIntensity = flash ? 3.0 : 0.2;
     emergencyBeacons[1].material.emissiveIntensity = flash ? 0.2 : 3.0;
   }
+}
+
+// Batched, irregular broadleaf canopy around the cleared landslide corridor.
+function createCanopy(scene) {
+  const count = 360;
+  const crownGeometry = new THREE.IcosahedronGeometry(1, 3);
+  const vertices = crownGeometry.attributes.position;
+  for (let i = 0; i < vertices.count; i++) {
+    const x = vertices.getX(i), y = vertices.getY(i), z = vertices.getZ(i);
+    const radius = 1 + 0.22 * noise2(x * 7 + z * 3, y * 8) + 0.12 * noise2(z * 17, x * 15);
+    vertices.setXYZ(i, x * radius, y * radius, z * radius);
+  }
+  crownGeometry.computeVertexNormals();
+  const crowns = new THREE.InstancedMesh(crownGeometry,
+    new THREE.MeshStandardMaterial({ color: 0x63754c, roughness: 0.94 }), count * 3);
+  const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.1, 0.2, 1, 6),
+    new THREE.MeshStandardMaterial({ color: 0x625446, roughness: 1 }), count);
+  const d = new THREE.Object3D();
+  for (let i = 0; i < count; i++) {
+    let x, z;
+    do { x = (random() - 0.5) * 132; z = (random() - 0.5) * 132; }
+    while ((Math.abs(z) < 30 && x > -27 && x < 35) || Math.abs(x + 8 - Math.sin(z * 0.05) * 4) < 4);
+    const y = getTerrainHeight(x, z), h = 4 + random() * 6;
+    d.position.set(x, y + h / 2, z); d.scale.set(1, h, 1); d.rotation.set(0, 0, 0); d.updateMatrix();
+    trunks.setMatrixAt(i, d.matrix);
+    for (let j = 0; j < 3; j++) {
+      d.position.set(x + (random() - 0.5) * 2.5, y + h - j * 0.65, z + (random() - 0.5) * 2.5);
+      const size = 1.3 + random() * 1.4;
+      d.scale.set(size, size * (0.75 + random() * 0.5), size); d.rotation.set(random(), random() * 6, random()); d.updateMatrix();
+      crowns.setMatrixAt(i * 3 + j, d.matrix);
+      crowns.setColorAt(i * 3 + j, new THREE.Color().setHSL(0.23 + random() * 0.06, 0.22, 0.25 + random() * 0.12));
+    }
+  }
+  crowns.castShadow = true; crowns.receiveShadow = true; trunks.castShadow = true;
+  scene.add(crowns, trunks);
 }

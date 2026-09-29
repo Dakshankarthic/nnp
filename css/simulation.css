@@ -1,0 +1,46 @@
+/* Simulation workspace: restrained surfaces, clear state and room for terrain. */
+:root { --panel-width: 330px; --accent-primary: #8ac8d9; --accent-cyan: #8ac8d9; --bg-panel: rgba(18,26,31,.97); --font-display: system-ui, sans-serif; --font-body: system-ui, sans-serif; --font-mono: ui-monospace, monospace; }
+#main-canvas { filter: none; }
+.hud-grid-overlay, .cam-scanline, .vignette-overlay { display: none; }
+#top-bar { background: #111a20; box-shadow: none; border-bottom: 1px solid #35434a; }
+.logo-diamond { border-radius: 5px; color: #c5dde3; background: #26383f; border: 0; }
+.logo-version { font-size: 8px; }
+.telemetry-badge { display: none; }
+.telemetry-pill { border-radius: 4px; color: #b6ccd0; background: #223239; border: 1px solid #3b5058; }
+#dashboard { top: 76px; right: 16px; bottom: 76px; width: 330px; background: rgba(17,26,32,.96); border: 1px solid #3a484f; border-radius: 8px; box-shadow: 0 8px 30px #0003; }
+.panel-title { font-size: 11px; letter-spacing: .4px; }
+.panel-subtitle { font-size: 8px; }
+.panel-status { font-size: 8px; }
+#camera-feeds { left: 16px; top: 176px; width: 230px; gap: 12px; }
+.cam-feed { width: 230px; border: 1px solid #55646b; border-radius: 6px; background: #142127; box-shadow: 0 6px 16px #0003; }
+.cam-canvas-wrap { height: 164px; }
+.cam-header { padding: 8px; }
+.cam-title { font-size: 8px; letter-spacing: .4px; }
+.cam-rec { font-size: 8px; }
+#pfd-hud { opacity: .75; }
+.artificial-horizon, .compass-tape-wrap { display: none; }
+.flight-tape { top: auto; bottom: 120px; background: #142127dd; padding: 10px 14px; border: 1px solid #82939966; border-radius: 4px; }
+.speed-tape { left: 275px; } .alt-tape { right: 365px; }
+#controls-bar { min-height: 54px; background: #111a20; border-top: 1px solid #35434a; gap: 16px; box-shadow: none; }
+.mode-btn, .cam-view-btn { border-radius: 4px; }
+.scene-toolbar { position: fixed; z-index: 80; top: 78px; left: 20px; right: 365px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; pointer-events: none; }
+.scenario-label { display: flex; flex-direction: column; gap: 4px; color: #fff; text-shadow: 0 1px 6px #16242c; }
+.scenario-label strong { font-size: 26px; font-weight: 550; letter-spacing: -.8px; }
+.scenario-label > span:last-child { font-size: 11px; }
+.eyebrow { font: 9px var(--font-mono); letter-spacing: 1.3px; }
+.scene-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; pointer-events: auto; max-width: 290px; }
+.scene-actions button, .scene-actions select { background: #19272eea; color: #e2eaec; border: 1px solid #66767c; border-radius: 4px; padding: 7px 10px; cursor: pointer; font: 11px var(--font-body); }
+.scene-actions label { color: white; font-size: 10px; text-shadow: 0 1px 4px #000; }
+.scene-actions button:hover { background: #37515b; }
+button:focus-visible, select:focus-visible { outline: 2px solid #dcecf0; outline-offset: 3px; }
+.scene-caption { position: fixed; bottom: 79px; left: 20px; color: white; text-shadow: 0 1px 5px #000; font: 9px var(--font-mono); letter-spacing: 1px; pointer-events: none; }
+.scene-caption span { display: block; margin-top: 6px; opacity: .8; letter-spacing: 0; }
+body.scene-focus #dashboard, body.scene-focus #camera-feeds, body.scene-focus #pfd-hud, body.scene-focus #tactical-hud-markers { display: none; }
+body.scene-focus .scene-toolbar { right: 20px; }
+@media (max-width: 1150px) { #camera-feeds { width: 180px; } .cam-feed { width: 180px; } .cam-canvas-wrap { height: 130px; } .top-left .telemetry-pill { display: none; } .scene-actions { max-width: 200px; } .scenario-label strong { font-size: 21px; } .speed-tape { left: 210px; } }
+@media (max-width: 850px) { #dashboard { width: 285px; } .scene-toolbar { right: 315px; } .scene-actions { max-width: 130px; } #camera-feeds, #pfd-hud { display: none; } .top-center { display: none; } .pattern-selector { display: none; } }
+@media (max-width: 600px) { #dashboard { top: auto; bottom: 65px; height: 34vh; width: calc(100% - 24px); right: 12px; } .scene-toolbar { left: 12px; right: 12px; top: 72px; } .scene-caption { display: none; } #controls-bar { gap: 6px; } .mode-btn, .cam-view-btn { padding: 7px; font-size: 9px; } }
+#pfd-hud { inset: 0; width: 100%; height: 100%; transform: none; }
+.flight-tape { transform: none; width: 86px; bottom: 88px; }
+.speed-tape { left: 275px; right: auto; }
+.alt-tape { left: 369px; right: auto; }

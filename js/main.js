@@ -10,7 +10,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-import { createDisasterScene, updateScene, objectRegistry, fireParticles } from './scene.js';
+import { createDisasterScene, updateScene, objectRegistry, fireParticles, getTerrainHeight } from './scene.js';
 import { ThermalRenderer } from './thermal.js';
 import { Drone } from './drone.js';
 import { SensorSystem } from './sensors.js';
@@ -26,14 +26,17 @@ let composer; // post-processing pipeline
 let primaryDrone, sensors, detection, thermal, swarm, dashboard, hazardPropagation, rescuePathfinder;
 let clock, paused = false;
 let rgbCamera;
-let currentCamMode = 'chase';
+let currentCamMode = 'recon';
+let simulationTime = 0;
+let sensorElapsed = 0;
+let cameraTransition = true;
 
 // ── Loading Screen Boot Sequence ─────────────────────────────────
 const BOOT_MESSAGES = [
   'Initializing incident command workspace...',
   'Loading disaster terrain, hazards, and casualty signatures...',
   'Calibrating FLIR uncooled VOx microbolometer (LWIR 8-14μm)...',
-  'Starting vehicle telemetry bridge...',
+  'Initializing simulated vehicle telemetry...',
   'Initializing optical feed and thermal model...',
   'Calibrating acoustic signal model...',
   'Configuring gas and VOC drift model...',
@@ -95,25 +98,25 @@ function init() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.88;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   // Scene
   scene = new THREE.Scene();
 
   // Camera
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-  camera.position.set(0, 15, 12);
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 800);
+  camera.position.set(-38, 37, 47);
   camera.lookAt(0, 0, 0);
 
   // OrbitControls
   controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
-  controls.enablePan = false;
+  controls.enablePan = true;
   controls.maxPolarAngle = Math.PI / 2.1;
   controls.minDistance = 3;
-  controls.maxDistance = 70;
+  controls.maxDistance = 150;
 
   // RGB PiP camera
   rgbCamera = new THREE.PerspectiveCamera(60, 320 / 240, 0.1, 100);
@@ -124,6 +127,7 @@ function init() {
   // Primary drone
   primaryDrone = new Drone(scene, 'AEGIS-1', 0x00c8ff);
   primaryDrone.position.set(0, 14, 0);
+  primaryDrone.mode = 'autonomous';
 
   // Default autonomous search waypoints (Creeping line)
   setSearchPattern('creeping_line');
@@ -193,6 +197,7 @@ function init() {
       camBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentCamMode = btn.dataset.cam;
+      cameraTransition = true;
     });
   }
 
@@ -210,13 +215,23 @@ function init() {
   composer.addPass(new RenderPass(scene, camera));
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.55,  // bloom strength
+    0.16,  // bloom strength
     0.40,  // radius
-    0.72   // threshold — only very bright emissives bloom
+    1.1    // threshold — only very bright emissives bloom
   );
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
 
+  document.getElementById('btn-pause').addEventListener('click', () => {
+    paused = !paused;
+    document.getElementById('btn-pause').textContent = paused ? 'Resume' : 'Pause';
+  });
+  document.getElementById('btn-reset').addEventListener('click', resetSimulation);
+  document.getElementById('btn-focus').addEventListener('click', () => document.body.classList.toggle('scene-focus'));
+  document.getElementById('weather-select').addEventListener('change', e => {
+    scene.fog.density = { clear: 0.002, overcast: 0.0045, mist: 0.012 }[e.target.value];
+    renderer.toneMappingExposure = e.target.value === 'mist' ? 0.80 : 0.88;
+  });
   // Start loop
   animate();
 }
@@ -224,7 +239,7 @@ function init() {
 // ── Search Pattern Waypoint Generator ────────────────────────────
 function dispatchBestRescueRoute() {
   const topTriage = detection.getTriageScores()[0];
-  const knownCasualty = [...objectRegistry.values()].find(obj => obj.type === 'person');
+  const knownCasualty = null; // Dispatch requires a detected track, not hidden scenario truth.
   const target = topTriage
     ? detection.processedDetections.find(d => d.name === topTriage.sourceName) || topTriage
     : detection.processedDetections.find(d => d.classification === 'person' || d.classification === 'possible_person')
@@ -272,10 +287,12 @@ function setupKeyboardShortcuts() {
   let paletteIdx = 0;
 
   document.addEventListener('keydown', (e) => {
+    if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName) || e.repeat) return;
     switch (e.key.toLowerCase()) {
       case ' ':
         e.preventDefault();
         paused = !paused;
+        document.getElementById('btn-pause').textContent = paused ? 'Resume' : 'Pause';
         break;
       case 'r':
         resetSimulation();
@@ -305,6 +322,7 @@ function updateDetectionMarkers(newDetections) {
   if (!newDetections) return;
 
   for (const det of newDetections) {
+    if (!['person', 'possible_person', 'fire', 'downed_power_line'].includes(det.classification)) continue;
     if (detection3DRings.has(det.name)) continue;
 
     // 1. Subtle, glowing ground ring (No 3D billboard text)
@@ -324,7 +342,7 @@ function updateDetectionMarkers(newDetections) {
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.copy(det.position);
-    ring.position.y = 0.08;
+    ring.position.y = getTerrainHeight(det.position.x, det.position.z) + 0.08;
     ringGroup.add(ring);
 
     // Faint vertical guide line
@@ -336,7 +354,7 @@ function updateDetectionMarkers(newDetections) {
     });
     const lineMesh = new THREE.Mesh(lineGeo, lineMat);
     lineMesh.position.copy(det.position);
-    lineMesh.position.y = 3;
+    lineMesh.position.y = ring.position.y + 3;
     ringGroup.add(lineMesh);
 
     scene.add(ringGroup);
@@ -467,10 +485,11 @@ function updateCamera() {
   } else if (currentCamMode === 'recon') {
     // High-Altitude Reconnaissance Orbit: bird's-eye tactical overview of landslide valley
     controls.enabled = true;
-    const dronePos = primaryDrone.position.clone();
-    const reconPos = new THREE.Vector3(dronePos.x + 14, dronePos.y + 44, dronePos.z + 30);
-    camera.position.lerp(reconPos, 0.04);
-    controls.target.lerp(dronePos, 0.06);
+    if (cameraTransition) {
+      camera.position.set(-38, 37, 47);
+      controls.target.set(0, 4, 0);
+      cameraTransition = false;
+    }
   } else {
     // Tactical 3rd Person Chase View (Follows smoothly behind and above)
     controls.enabled = true;
@@ -499,14 +518,20 @@ let frameCount = 0;
 function animate() {
   requestAnimationFrame(animate);
 
+  const wallDt = Math.min(clock.getDelta(), 0.05);
   if (paused) {
+    updateCamera();
     controls.update();
-    renderer.render(scene, camera);
+    primaryDrone.group.visible = currentCamMode !== 'fpv';
+    composer.render();
+    primaryDrone.group.visible = true;
     return;
   }
 
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const time = clock.getElapsedTime();
+  const dt = wallDt;
+  simulationTime += dt;
+  const time = simulationTime;
+  dashboard.simulationTime = simulationTime;
   frameCount++;
 
   // 1. Update scene animations
@@ -528,11 +553,14 @@ function animate() {
 
   // 6. Sensor sweep
   let newDetections = null;
-  if (frameCount % 3 === 0) {
-    const snapshot = sensors.update(primaryDrone, dt * 3);
+  sensorElapsed += dt;
+  if (sensorElapsed >= 0.1) {
+    const snapshot = sensors.update(primaryDrone, sensorElapsed);
+    sensorElapsed = 0;
     if (snapshot) {
       newDetections = detection.process(snapshot);
       if (newDetections && newDetections.length > 0) {
+        dashboard.addDetections(newDetections);
         primaryDrone.detectionCount += newDetections.length;
         for (const det of newDetections) {
           if (det.classification === 'person') {
@@ -546,13 +574,17 @@ function animate() {
   // 7. Thermal camera render
   if (frameCount % 4 === 0) {
     thermal.updateCamera(primaryDrone.position, primaryDrone.getQuaternion());
+    primaryDrone.group.visible = false;
     thermal.render(scene, time);
+    primaryDrone.group.visible = true;
   }
 
   // 8. RGB camera render
   if (frameCount % 4 === 2) {
     updateRGBCamera();
+    primaryDrone.group.visible = false;
     sensors.renderRGBFeed(renderer, scene, rgbCamera);
+    primaryDrone.group.visible = true;
   }
 
   // 9. Update detection markers & 2D tactical HUD projection
@@ -562,9 +594,7 @@ function animate() {
   // 10. Update situation awareness dashboard
   if (frameCount % 10 === 0) {
     dashboard.updateStats(detection, swarm.getAreaSweptPercentage());
-    if (newDetections && newDetections.length > 0) {
-      dashboard.addDetections(newDetections);
-    }
+
     dashboard.updateTriage(detection.getTriageScores());
     dashboard.updateDroneStatus(swarm.getAllDroneStatuses());
     dashboard.updateOperationsPanel(hazardPropagation.getSummary());
@@ -580,31 +610,15 @@ function animate() {
 
   // 12. Render main 3D scene through bloom post-processing
   renderer.setRenderTarget(null);
+  primaryDrone.group.visible = currentCamMode !== 'fpv';
   composer.render();
+  primaryDrone.group.visible = true;
 }
 
 // ── Reset ────────────────────────────────────────────────────────
 function resetSimulation() {
-  primaryDrone.position.set(0, 8, 0);
-  primaryDrone.velocity.set(0, 0, 0);
-  primaryDrone.yaw = 0;
-  primaryDrone.pitch = 0;
-  primaryDrone.battery = 100;
-  primaryDrone.trail = [];
-  primaryDrone.distanceTraveled = 0;
-  primaryDrone.detectionCount = 0;
-
-  for (const [, item] of detection3DRings) {
-    scene.remove(item.group);
-  }
-  detection3DRings.clear();
-  activeTargetsList.length = 0;
-
-  if (tacticalHudContainer) {
-    tacticalHudContainer.innerHTML = '';
-  }
-
-  rescuePathfinder?.clearRoute();
+  // Reload reconstructs all scene, sensor, swarm, UI and mission state together.
+  window.location.reload();
 }
 
 // ── Resize Handler ───────────────────────────────────────────────

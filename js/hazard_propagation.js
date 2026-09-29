@@ -6,10 +6,10 @@ import * as THREE from 'three';
 import { getTerrainHeight, objectRegistry } from './scene.js';
 
 const FORECASTS = {
-  0: { fire: 2.8, flood: 5.0, power: 3.8, opacity: 0.2 },
-  15: { fire: 5.2, flood: 7.0, power: 4.8, opacity: 0.26 },
-  30: { fire: 7.8, flood: 9.5, power: 5.8, opacity: 0.32 },
-  60: { fire: 11.5, flood: 13.0, power: 7.2, opacity: 0.38 },
+  0: { fire: 2.8, flood: 5.0, power: 3.8, opacity: 0.08 },
+  15: { fire: 5.2, flood: 7.0, power: 4.8, opacity: 0.12 },
+  30: { fire: 7.8, flood: 9.5, power: 5.8, opacity: 0.16 },
+  60: { fire: 11.5, flood: 13.0, power: 7.2, opacity: 0.20 },
 };
 
 export class HazardPropagation {

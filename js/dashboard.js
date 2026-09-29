@@ -178,7 +178,7 @@ export class Dashboard {
    * Updates header stats and telemetry readouts
    */
   updateStats(detectionPipeline, areaSweep) {
-    const elapsed = Date.now() - this.missionStartTime;
+    const elapsed = (this.simulationTime || 0) * 1000;
     const h = String(Math.floor(elapsed / 3600000)).padStart(2, '0');
     const m = String(Math.floor((elapsed % 3600000) / 60000)).padStart(2, '0');
     const s = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
@@ -201,7 +201,7 @@ export class Dashboard {
     // Simulated MAVLink jitter
     if (this.telemetryRssi && Math.random() < 0.05) {
       const rssi = -60 - Math.floor(Math.random() * 6);
-      this.telemetryRssi.textContent = `${rssi} dBm (99.8%)`;
+      this.telemetryRssi.textContent = `${rssi} dBm · SIM`;
     }
   }
 
@@ -398,7 +398,7 @@ export class Dashboard {
         classification: "Training simulation",
         incidentType: "Landslide response with fire and flood risk",
         timestampUTC: new Date().toISOString(),
-        elapsedTimeSeconds: Math.floor((Date.now() - this.missionStartTime) / 1000),
+        elapsedTimeSeconds: Math.floor(this.simulationTime || 0),
         swarmConstellation: this.lastDroneStatuses,
       },
       findingsLedger: Array.from(this.displayedDetections.values()).map(d => ({

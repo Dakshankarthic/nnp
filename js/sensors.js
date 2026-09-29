@@ -7,7 +7,7 @@
  * values are derived from actual distances and angles.
  */
 import * as THREE from 'three';
-import { objectRegistry } from './scene.js';
+import { objectRegistry, getTerrainHeight } from './scene.js';
 
 const DETECTION_RANGE = 18;     // max sensor range (meters)
 const THERMAL_FOV = 60;         // degrees
@@ -31,7 +31,7 @@ export class SensorSystem {
    */
   update(drone, dt) {
     this.timer += dt;
-    if (this.timer < this.updateInterval) return this.lastSnapshot;
+    if (this.timer < this.updateInterval) return null;
     this.timer = 0;
 
     const dronePos = drone.position;
@@ -64,12 +64,19 @@ export class SensorSystem {
       const angleDeg = (angle * 180) / Math.PI;
 
       // Is it in FOV?
-      const inFOV = angleDeg < THERMAL_FOV / 2;
+      let terrainOccluded = false;
+      // Sample the elevation model along the sensor ray; no thermal vision through hills.
+      for (let step = 1; step < 24; step++) {
+        const t = step / 24;
+        const ray = dronePos.clone().lerp(objPos, t);
+        if (getTerrainHeight(ray.x, ray.z) > ray.y + 0.25) { terrainOccluded = true; break; }
+      }
+      const inFOV = angleDeg < THERMAL_FOV / 2 && !terrainOccluded && !obj.metadata?.occluded;
 
       // Visibility factor (closer + more centered = clearer)
       const distanceFactor = 1 - distance / DETECTION_RANGE;
       const angleFactor = inFOV ? 1 - angleDeg / (THERMAL_FOV / 2) : 0;
-      const visibility = distanceFactor * 0.6 + angleFactor * 0.4;
+      const visibility = inFOV ? distanceFactor * 0.6 + angleFactor * 0.4 : 0;
 
       // ── Thermal sensor ──
       const thermalReading = {
@@ -188,14 +195,14 @@ export class SensorSystem {
     const width = 320, height = 240;
     
     // Create a temporary render target
-    const renderTarget = new THREE.WebGLRenderTarget(width, height);
+    const renderTarget = this.rgbTarget ||= new THREE.WebGLRenderTarget(width, height);
     
     renderer.setRenderTarget(renderTarget);
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
 
     // Read pixels
-    const pixels = new Uint8Array(width * height * 4);
+    const pixels = this.rgbPixels ||= new Uint8Array(width * height * 4);
     renderer.readRenderTargetPixels(renderTarget, 0, 0, width, height, pixels);
 
     const imageData = this.rgbCtx.createImageData(width, height);
@@ -256,7 +263,7 @@ export class SensorSystem {
       }
     }
 
-    renderTarget.dispose();
+
   }
 }
 
