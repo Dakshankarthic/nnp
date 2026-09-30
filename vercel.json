@@ -1,9 +1,7 @@
 {
-  "version": 2,
   "cleanUrls": true,
-  "rewrites": [
-    { "source": "/drone", "destination": "/drone-viewer/index.html" },
-    { "source": "/drone-viewer", "destination": "/drone-viewer/index.html" },
-    { "source": "/viewer", "destination": "/drone-viewer/index.html" }
+  "redirects": [
+    { "source": "/drone", "destination": "/drone-viewer/", "permanent": false },
+    { "source": "/viewer", "destination": "/drone-viewer/", "permanent": false }
   ]
 }
