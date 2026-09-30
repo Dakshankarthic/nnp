@@ -1,0 +1,30 @@
+{
+  "model_objects": 858,
+  "leg_collections": 6,
+  "animated_joints": 18,
+  "visible_text_objects": 0,
+  "glb_meshes": 833,
+  "glb_animations": 18,
+  "foot_check": [
+    {
+      "frame": 1,
+      "lowest_foot_mm": -2.63,
+      "highest_foot_mm": -2.63
+    },
+    {
+      "frame": 31,
+      "lowest_foot_mm": -2.63,
+      "highest_foot_mm": 15.05
+    },
+    {
+      "frame": 61,
+      "lowest_foot_mm": -2.63,
+      "highest_foot_mm": -2.63
+    },
+    {
+      "frame": 91,
+      "lowest_foot_mm": -2.63,
+      "highest_foot_mm": 15.05
+    }
+  ]
+}
