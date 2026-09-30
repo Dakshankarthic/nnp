@@ -105,9 +105,9 @@
     </div>
 
     <div class="top-right">
-      <a href="nnp-dashboard/" class="top-nav-drone-btn nnp-btn" style="border-color: rgba(110, 231, 183, 0.4); color: #6ee7b7;" title="Open NNP Air-Ground SAR Mission Control">
+      <button id="btn-top-nnp-modal" class="top-nav-drone-btn nnp-btn" style="border-color: rgba(110, 231, 183, 0.4); color: #6ee7b7; cursor:pointer;" title="Open NNP Air-Ground SAR Mission Control">
         <span>🛰️ NNP MISSION CONTROL</span>
-      </a>
+      </button>
       <a href="drone-viewer/" class="top-nav-drone-btn" title="View interactive 3D Drone Model">
         <span>🛸 3D DRONE MODEL</span>
       </a>
@@ -238,6 +238,9 @@
       <button class="tab active" data-tab="ops">
         <span class="tab-icon">04</span>OPS
       </button>
+      <button class="tab" data-tab="nnp">
+        <span class="tab-icon">05</span>NNP C2
+      </button>
     </div>
 
     <!-- Target Feed -->
@@ -338,6 +341,101 @@
       </div>
     </div>
 
+    <!-- ============ NNP AIR-GROUND SAR TAB ============ -->
+    <div class="tab-content" id="tab-nnp">
+      <div class="sub-header">
+        <span>NNP AIR-GROUND SORTIE PIPELINE</span>
+        <button id="btn-launch-nnp-modal" class="pill" style="border-color:#6ee7b7; color:#6ee7b7; cursor:pointer;">⚡ EXPAND C2</button>
+      </div>
+      <div class="nnp-c2-panel">
+        <div class="nnp-banner">
+          <div class="nnp-banner-title">MUDUMALAI TIGER RESERVE · THEPPAKADU</div>
+          <div class="nnp-banner-sub">HETEROGENEOUS SWARM SORTIE // AIRSPACE ENFORCED</div>
+        </div>
+
+        <!-- 7-Phase Pipeline Tracker -->
+        <div class="nnp-phase-list">
+          <div class="nnp-phase-row done">
+            <span class="nnp-phase-num">P1</span>
+            <div class="nnp-phase-info">
+              <strong>Pre-Flight Initialization</strong>
+              <span>INT8 TensorRT (YOLOv11+SAM3) · RTK integer lock FIXED</span>
+            </div>
+            <span class="nnp-phase-badge done">LOCK</span>
+          </div>
+          <div class="nnp-phase-row done">
+            <span class="nnp-phase-num">P2</span>
+            <div class="nnp-phase-info">
+              <strong>Launch & Transit Corridors</strong>
+              <span>R1 Relay @ 150m AGL · A1-A4 @ 45m · 802.11ah bat0 mesh</span>
+            </div>
+            <span class="nnp-phase-badge done">ON STATION</span>
+          </div>
+          <div class="nnp-phase-row active">
+            <span class="nnp-phase-num">P3</span>
+            <div class="nnp-phase-info">
+              <strong>Geofence Convex Hull (7 Hexapods)</strong>
+              <span>G1-G7 RTK vertices mapped · APF boundary wall d₀=5.0m</span>
+            </div>
+            <span class="nnp-phase-badge active">SEALED</span>
+          </div>
+          <div class="nnp-phase-row active">
+            <span class="nnp-phase-num">P4</span>
+            <div class="nnp-phase-info">
+              <strong>Sweep & Map Boustrophedon</strong>
+              <span>30m AGL · 21.0m pitch · FLIR Boson 640 ∥ Hexapod DEM</span>
+            </div>
+            <span class="nnp-phase-badge active">SWEEPING</span>
+          </div>
+          <div class="nnp-phase-row">
+            <span class="nnp-phase-num">P5</span>
+            <div class="nnp-phase-info">
+              <strong>SAVIOR Finite-State Hover Lock</strong>
+              <span>10m exclusive reservation cylinder · Conf &ge; 0.82 trigger</span>
+            </div>
+            <span class="nnp-phase-badge">STANDBY</span>
+          </div>
+          <div class="nnp-phase-row">
+            <span class="nnp-phase-num">P6</span>
+            <div class="nnp-phase-info">
+              <strong>Vital Sign Verification</strong>
+              <span>24 GHz mmWave radar · R_xx(&tau;) &ge; 0.75 for 8.0s respiration</span>
+            </div>
+            <span class="nnp-phase-badge">STANDBY</span>
+          </div>
+          <div class="nnp-phase-row">
+            <span class="nnp-phase-num">P7</span>
+            <div class="nnp-phase-info">
+              <strong>Nav2 A* Extraction Pathfinding</strong>
+              <span>f(p) = g+h + 3·C_aerial + 2·C_trav · Gate hexapod beacons</span>
+            </div>
+            <span class="nnp-phase-badge">READY</span>
+          </div>
+        </div>
+
+        <!-- Mesh Performance Metrics -->
+        <div class="ops-card" style="margin-top: 10px;">
+          <div class="ops-card-title">AIR-GROUND MESH TELEMETRY (BATMAN-ADV)</div>
+          <div class="ops-kpi-grid">
+            <div><span>MESH LATENCY</span><strong style="color:#00ffaa;">14 MS</strong></div>
+            <div><span>THROUGHPUT</span><strong style="color:#00c8ff;">18.4 MBPS</strong></div>
+            <div><span>PDR RATE</span><strong style="color:#00ffaa;">99.4%</strong></div>
+            <div><span>EDGE POWER</span><strong style="color:#ffaa00;">6.8 W</strong></div>
+          </div>
+        </div>
+
+        <!-- Open Embedded Full Dashboard -->
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+          <button id="btn-nnp-embed" class="btn-dispatch-route" style="background: rgba(0, 255, 170, 0.15); border-color: #00ffaa; color: #00ffaa;">
+            ⚡ OPEN EXPANDED C2 MODAL
+          </button>
+          <a href="nnp-dashboard/" target="_blank" class="btn-dispatch-route" style="background: rgba(0, 200, 255, 0.12); border-color: #00c8ff; color: #00c8ff; text-align: center; text-decoration: none; padding-top: 10px;">
+            ↗ FULL SCREEN
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- Panel Footer: Export Incident Report -->
     <div class="panel-footer">
       <button id="btn-export-report" class="btn-export">
@@ -345,6 +443,25 @@
       </button>
     </div>
   </aside>
+
+  <!-- ============ NNP FULL MISSION CONTROL MODAL ============ -->
+  <div id="nnp-modal" class="nnp-modal-wrap" style="display: none;">
+    <div class="nnp-modal-backdrop" id="nnp-backdrop"></div>
+    <div class="nnp-modal-window">
+      <div class="nnp-modal-header">
+        <div class="nnp-modal-title">
+          <span>🛰️</span>
+          <strong>NNP · AIR–GROUND SAR TACTICAL MISSION CONTROL</strong>
+          <span class="nnp-modal-badge">MUDUMALAI CORRIDOR · 12-NODE MESH</span>
+        </div>
+        <div class="nnp-modal-actions">
+          <a href="nnp-dashboard/" target="_blank" class="nnp-modal-ext" title="Open in new window">↗ NEW TAB</a>
+          <button id="btn-close-nnp-modal" class="nnp-modal-close" title="Close Mission Control">✕</button>
+        </div>
+      </div>
+      <iframe src="nnp-dashboard/" class="nnp-modal-frame" title="NNP Mission Control Dashboard"></iframe>
+    </div>
+  </div>
 
   <!-- ============ BOTTOM CONTROLS ============ -->
   <footer id="controls-bar">

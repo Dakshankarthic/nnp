@@ -19,11 +19,12 @@ import { SwarmCoordinator } from './swarm.js';
 import { Dashboard } from './dashboard.js';
 import { HazardPropagation } from './hazard_propagation.js';
 import { RescuePathfinder } from './pathfinder.js';
+import { HexapodFleet } from './hexapods.js';
 
 // ── Global State ─────────────────────────────────────────────────
 let renderer, scene, camera, controls;
 let composer; // post-processing pipeline
-let primaryDrone, sensors, detection, thermal, swarm, dashboard, hazardPropagation, rescuePathfinder;
+let primaryDrone, sensors, detection, thermal, swarm, dashboard, hazardPropagation, rescuePathfinder, hexapodFleet;
 let clock, paused = false;
 let rgbCamera;
 let currentCamMode = 'recon';
@@ -139,8 +140,9 @@ function init() {
   // Thermal renderer
   thermal = new ThermalRenderer(renderer, 320, 240);
 
-  // Swarm coordinator
+  // Swarm coordinator (aerial) & Hexapod fleet (ground perimeter)
   swarm = new SwarmCoordinator(scene, primaryDrone);
+  hexapodFleet = new HexapodFleet(scene);
 
   // Decision-support overlays
   hazardPropagation = new HazardPropagation(scene);
@@ -250,6 +252,9 @@ function dispatchBestRescueRoute() {
       } : null);
 
   const route = target ? rescuePathfinder.dispatchRoute(target.position) : null;
+  if (route && hexapodFleet) {
+    hexapodFleet.setGateHexapod('G1');
+  }
   dashboard.updateOperationsPanel(hazardPropagation.getSummary(), route, target);
 }
 
@@ -540,8 +545,9 @@ function animate() {
   // 2. Update primary drone physics & controls
   primaryDrone.update(dt);
 
-  // 3. Update swarm
+  // 3. Update aerial swarm & ground hexapods
   swarm.update(dt);
+  if (hexapodFleet) hexapodFleet.update(time);
   hazardPropagation.update(time);
 
   // 4. Camera follow
@@ -596,7 +602,10 @@ function animate() {
     dashboard.updateStats(detection, swarm.getAreaSweptPercentage());
 
     dashboard.updateTriage(detection.getTriageScores());
-    dashboard.updateDroneStatus(swarm.getAllDroneStatuses());
+    dashboard.updateDroneStatus(
+      swarm.getAllDroneStatuses(),
+      hexapodFleet ? hexapodFleet.getFleetTelemetry() : []
+    );
     dashboard.updateOperationsPanel(hazardPropagation.getSummary());
   }
 

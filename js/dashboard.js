@@ -47,6 +47,9 @@ export class Dashboard {
     // Operations controls
     this._setupOperationsControls();
 
+    // NNP Mission Control Modal
+    this._setupNnpModal();
+
     // State
     this.missionStartTime = Date.now();
     this.displayedDetections = new Map(); // id -> det
@@ -145,6 +148,34 @@ export class Dashboard {
 
     demoBtn?.addEventListener('click', () => {
       if (this.onDemoRun) this.onDemoRun();
+    });
+  }
+
+  _setupNnpModal() {
+    const modal = document.getElementById('nnp-modal');
+    const openBtn1 = document.getElementById('btn-launch-nnp-modal');
+    const openBtn2 = document.getElementById('btn-nnp-embed');
+    const openBtn3 = document.getElementById('btn-top-nnp-modal');
+    const closeBtn = document.getElementById('btn-close-nnp-modal');
+    const backdrop = document.getElementById('nnp-backdrop');
+
+    const open = () => {
+      if (modal) modal.style.display = 'flex';
+    };
+    const close = () => {
+      if (modal) modal.style.display = 'none';
+    };
+
+    openBtn1?.addEventListener('click', open);
+    openBtn2?.addEventListener('click', open);
+    openBtn3?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    backdrop?.addEventListener('click', close);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+        close();
+      }
     });
   }
 
@@ -355,10 +386,17 @@ export class Dashboard {
   /**
    * Update swarm constellation cards
    */
-  updateDroneStatus(statuses) {
+  updateDroneStatus(statuses, hexapodStatuses = []) {
     if (!this.droneList || !statuses) return;
     this.lastDroneStatuses = statuses;
     this.droneList.innerHTML = '';
+
+    // ── 1. Aerial Swarm Section ──
+    const aerialHeader = document.createElement('div');
+    aerialHeader.className = 'sub-header';
+    aerialHeader.style.marginTop = '4px';
+    aerialHeader.innerHTML = '<span>AERIAL SWARM (X8 OCTOCOPTERS)</span>';
+    this.droneList.appendChild(aerialHeader);
 
     const roles = {
       'AEGIS-1': 'Lead scout / EO-IR mapping',
@@ -389,6 +427,41 @@ export class Dashboard {
         </div>
       `;
       this.droneList.appendChild(card);
+    }
+
+    // ── 2. NNP Ground Fleet (G1–G7 Hexapods) ──
+    if (hexapodStatuses && hexapodStatuses.length > 0) {
+      const groundHeader = document.createElement('div');
+      groundHeader.className = 'sub-header';
+      groundHeader.style.marginTop = '14px';
+      groundHeader.innerHTML = '<span>GROUND FLEET (G1–G7 HEXAPOD UGVs)</span>';
+      this.droneList.appendChild(groundHeader);
+
+      for (const h of hexapodStatuses) {
+        const hCard = document.createElement('div');
+        const isBeacon = h.role === 'EXTRACTION_GATE_BEACON';
+        hCard.className = `drone-status-card ${isBeacon ? 'lead' : ''}`;
+        hCard.style.borderColor = isBeacon ? '#ffaa00' : 'rgba(0, 255, 170, 0.25)';
+
+        hCard.innerHTML = `
+          <div class="drone-status-header">
+            <span class="drone-callsign" style="color: ${isBeacon ? '#ffaa00' : '#00ffaa'};">${h.id} HEXAPOD</span>
+            <span class="drone-role" style="color: ${isBeacon ? '#ffaa00' : '#8a9bb0'};">${h.role}</span>
+          </div>
+          <div class="battery-bar-wrap">
+            <div class="battery-bar-fill" style="width:${h.battery}%; background:#00ffaa;"></div>
+          </div>
+          <div class="drone-metrics-grid">
+            <div>GNSS: <span style="color:#00ff88; font-weight:600;">${h.rtk}</span></div>
+            <div>BATTERY: <span style="color:#fff;">${h.battery}%</span></div>
+            <div>ELEVATION: <span style="color:#fff;">${h.elevation}m</span></div>
+            <div>FAST-LIO2: <span style="color:#00c8ff;">LIDAR DEM</span></div>
+            <div>COORD: <span style="color:#fff;">[${h.position.x}, ${h.position.z}]</span></div>
+            <div>STATE: <span style="color:${isBeacon ? '#ffaa00' : '#fff'};">${h.status}</span></div>
+          </div>
+        `;
+        this.droneList.appendChild(hCard);
+      }
     }
   }
 
