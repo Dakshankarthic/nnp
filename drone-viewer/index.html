@@ -100,6 +100,33 @@
       font-weight: 300;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .header-nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 24px;
+      font: 500 11px var(--font-mono);
+      color: var(--accent);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .header-nav-btn:hover {
+      background: rgba(0, 200, 255, 0.15);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
     .header-badge {
       display: flex;
       align-items: center;
@@ -413,9 +440,12 @@
       <h1 class="brand-title">Quadcopter</h1>
       <p class="brand-sub">Photo-guided 3D model · Drag to rotate · Scroll to zoom</p>
     </div>
-    <div class="header-badge">
-      <span class="dot"></span>
-      <span>3D MODEL · INTERACTIVE</span>
+    <div class="header-actions">
+      <a href="../" class="header-nav-btn">◀ COMMAND SIMULATION</a>
+      <div class="header-badge">
+        <span class="dot"></span>
+        <span>3D MODEL · INTERACTIVE</span>
+      </div>
     </div>
   </header>
 
