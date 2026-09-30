@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AEGIS-SAR Drone — Interactive 3D model viewer with photo-guided construction">
+  <title>AEGIS-SAR | Drone 3D Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep: #0a0e14;
+      --bg-panel: rgba(14, 20, 28, 0.88);
+      --bg-glass: rgba(20, 30, 42, 0.65);
+      --border-glass: rgba(100, 140, 180, 0.15);
+      --accent: #00c8ff;
+      --accent-glow: rgba(0, 200, 255, 0.15);
+      --accent-secondary: #a47bff;
+      --accent-warm: #ff6b3d;
+      --text-primary: #e8f0f6;
+      --text-secondary: #8a9bb0;
+      --text-dim: #556677;
+      --font-display: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── 3D Canvas ── */
+    #viewer-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Gradient Vignette ── */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background:
+        radial-gradient(ellipse at 30% 80%, rgba(0,200,255,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 20%, rgba(164,123,255,0.03) 0%, transparent 50%),
+        linear-gradient(to bottom, transparent 60%, rgba(10,14,20,0.6) 100%);
+    }
+
+    /* ── Top Header ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 28px 36px;
+      pointer-events: none;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .brand-eyebrow {
+      font: 500 9px/1 var(--font-mono);
+      letter-spacing: 2.5px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .brand-title {
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 300;
+    }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 24px;
+      font: 500 11px var(--font-mono);
+      color: var(--text-secondary);
+      pointer-events: auto;
+    }
+
+    .header-badge .dot {
+      width: 7px; height: 7px;
+      background: #00e87b;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00e87b88;
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+
+    /* ── Spec Cards (Left Side) ── */
+    .spec-panel {
+      position: fixed;
+      left: 36px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .spec-card {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      min-width: 180px;
+      opacity: 0;
+      transform: translateX(-20px);
+      animation: slideIn 0.5s ease forwards;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      pointer-events: auto;
+    }
+
+    .spec-card:hover {
+      border-color: rgba(0, 200, 255, 0.3);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .spec-card:nth-child(1) { animation-delay: 0.8s; }
+    .spec-card:nth-child(2) { animation-delay: 1.0s; }
+    .spec-card:nth-child(3) { animation-delay: 1.2s; }
+    .spec-card:nth-child(4) { animation-delay: 1.4s; }
+    .spec-card:nth-child(5) { animation-delay: 1.6s; }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .spec-label {
+      font: 500 8px/1 var(--font-mono);
+      letter-spacing: 1.8px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .spec-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .spec-value .unit {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-left: 3px;
+    }
+
+    .spec-note {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+
+    /* ── Controls Toolbar (Bottom) ── */
+    .toolbar {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-glass);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .toolbar button {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font: 500 12px var(--font-display);
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar button:hover {
+      background: rgba(0,200,255,0.08);
+      color: var(--text-primary);
+      border-color: var(--border-glass);
+    }
+
+    .toolbar button.active {
+      background: rgba(0,200,255,0.12);
+      color: var(--accent);
+      border-color: rgba(0,200,255,0.3);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .toolbar button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn-icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .divider {
+      width: 1px;
+      background: var(--border-glass);
+      margin: 4px 2px;
+    }
+
+    /* ── Right Panel: Component Legend ── */
+    .legend-panel {
+      position: fixed;
+      right: 36px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      opacity: 0;
+      transform: translateX(20px);
+      animation: slideInRight 0.5s ease forwards;
+      pointer-events: auto;
+      transition: border-color 0.3s;
+    }
+
+    .legend-item:hover {
+      border-color: rgba(0, 200, 255, 0.25);
+    }
+
+    .legend-item:nth-child(1) { animation-delay: 1.0s; }
+    .legend-item:nth-child(2) { animation-delay: 1.15s; }
+    .legend-item:nth-child(3) { animation-delay: 1.3s; }
+    .legend-item:nth-child(4) { animation-delay: 1.45s; }
+    .legend-item:nth-child(5) { animation-delay: 1.6s; }
+    .legend-item:nth-child(6) { animation-delay: 1.75s; }
+    .legend-item:nth-child(7) { animation-delay: 1.9s; }
+
+    @keyframes slideInRight {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ── Loading Overlay ── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      background: var(--bg-deep);
+      transition: opacity 0.6s ease;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-ring {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(0,200,255,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+      font: 500 11px var(--font-mono);
+      letter-spacing: 2px;
+      color: var(--text-dim);
+    }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      position: fixed;
+      bottom: 88px;
+      width: 100%;
+      text-align: center;
+      z-index: 9;
+      font: 400 11px var(--font-display);
+      color: var(--text-dim);
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 0.5s ease 2s forwards;
+    }
+
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* ── Capture Mode ── */
+    body.capture-mode header,
+    body.capture-mode .spec-panel,
+    body.capture-mode .legend-panel,
+    body.capture-mode .toolbar,
+    body.capture-mode .status-bar,
+    body.capture-mode .vignette { display: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1100px) {
+      .legend-panel { display: none; }
+      .spec-panel { left: 20px; }
+      header { padding: 20px 24px; }
+    }
+
+    @media (max-width: 768px) {
+      .spec-panel { display: none; }
+      .brand-title { font-size: 24px; }
+      .toolbar { bottom: 16px; }
+      .toolbar button { padding: 8px 10px; font-size: 11px; }
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./viewer/vendor/three.module.js",
+      "three/addons/": "./viewer/vendor/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loader-ring"></div>
+    <div class="loader-text">LOADING 3D MODEL</div>
+  </div>
+
+  <!-- 3D Canvas -->
+  <canvas id="viewer-canvas"></canvas>
+
+  <!-- Vignette -->
+  <div class="vignette"></div>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-eyebrow">AEGIS-SAR / HARDWARE PLATFORM</span>
+      <h1 class="brand-title">Quadcopter</h1>
+      <p class="brand-sub">Photo-guided 3D model · Drag to rotate · Scroll to zoom</p>
+    </div>
+    <div class="header-badge">
+      <span class="dot"></span>
+      <span>3D MODEL · INTERACTIVE</span>
+    </div>
+  </header>
+
+  <!-- Left Spec Cards -->
+  <div class="spec-panel">
+    <div class="spec-card">
+      <div class="spec-label">Motor Diagonal</div>
+      <div class="spec-value">220<span class="unit">mm</span></div>
+      <div class="spec-note">5" racing class frame</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Propellers</div>
+      <div class="spec-value">5"<span class="unit">tri-blade</span></div>
+      <div class="spec-note">~127 mm diameter</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Frame</div>
+      <div class="spec-value">Carbon<span class="unit">fiber</span></div>
+      <div class="spec-note">X-configuration arms</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Motors</div>
+      <div class="spec-value">4×<span class="unit">brushless</span></div>
+      <div class="spec-note">Independent rotor assemblies</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Camera</div>
+      <div class="spec-value">HD<span class="unit">module</span></div>
+      <div class="spec-note">Forward-mount w/ TPU guard</div>
+    </div>
+  </div>
+
+  <!-- Right Component Legend -->
+  <div class="legend-panel">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #2a2a2e;"></div>
+      Carbon fiber frame
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #c08aff;"></div>
+      Three-blade propellers
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #cc2233;"></div>
+      Brushless motor bells
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #ecc55a;"></div>
+      TPU protective mounts
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #2a8a6a;"></div>
+      Flight controller / ESC
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #4488aa;"></div>
+      Camera module
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: #cc4444;"></div>
+      Wiring harness
+    </div>
+  </div>
+
+  <!-- Bottom Toolbar -->
+  <div class="toolbar">
+    <button id="btn-spin" disabled>
+      <span class="btn-icon">⟳</span> Spin Propellers
+    </button>
+    <div class="divider"></div>
+    <button id="btn-hero" class="active" data-view="hero">
+      <span class="btn-icon">◆</span> Hero
+    </button>
+    <button id="btn-top" data-view="top">
+      <span class="btn-icon">▼</span> Top
+    </button>
+    <button id="btn-front" data-view="front">
+      <span class="btn-icon">►</span> Front
+    </button>
+    <button id="btn-side" data-view="side">
+      <span class="btn-icon">◀</span> Side
+    </button>
+    <div class="divider"></div>
+    <button id="btn-capture" title="Hide UI for clean screenshot">
+      <span class="btn-icon">📷</span> Capture Mode
+    </button>
+    <button id="btn-reset">
+      <span class="btn-icon">↺</span> Reset
+    </button>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="status-bar">
+    Model ready · Blender .blend and portable .glb files included
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // ── Renderer ──
+    const canvas = document.getElementById('viewer-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // ── Scene ──
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0c1018');
+    scene.fog = new THREE.FogExp2('#0c1018', 1.8);
+
+    // ── Camera ──
+    const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.001, 20);
+
+    // ── Controls ──
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 0.15;
+    controls.maxDistance = 1.8;
+    controls.maxPolarAngle = Math.PI * 0.52;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.4;
+
+    // ── Lighting — Premium product studio ──
+    const keyLight = new THREE.DirectionalLight(0xfff4e8, 3.0);
+    keyLight.position.set(0.4, 0.8, 0.5);
+    keyLight.castShadow = true;
+    keyLight.shadow.camera.left = -0.25;
+    keyLight.shadow.camera.right = 0.25;
+    keyLight.shadow.camera.top = 0.25;
+    keyLight.shadow.camera.bottom = -0.25;
+    keyLight.shadow.camera.near = 0.01;
+    keyLight.shadow.camera.far = 2;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.normalBias = 0.0005;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x8ab8e0, 1.5);
+    fillLight.position.set(-0.5, 0.3, -0.4);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0x00c8ff, 0.8);
+    rimLight.position.set(-0.3, 0.1, 0.6);
+    scene.add(rimLight);
+
+    const hemi = new THREE.HemisphereLight(0xc8dce8, 0x1a1410, 1.8);
+    scene.add(hemi);
+
+    const underLight = new THREE.PointLight(0xff8844, 0.3, 1.5);
+    underLight.position.set(0, -0.15, 0);
+    scene.add(underLight);
+
+    // ── Studio floor ──
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(8, 8),
+      new THREE.MeshStandardMaterial({ color: 0x14191f, roughness: 0.65, metalness: 0.2 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.003;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Subtle ground glow ring
+    const groundRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.22, 0.55, 64),
+      new THREE.MeshBasicMaterial({ color: 0x00c8ff, transparent: true, opacity: 0.04, side: THREE.DoubleSide })
+    );
+    groundRing.rotation.x = -Math.PI / 2;
+    groundRing.position.y = -0.001;
+    scene.add(groundRing);
+
+    // ── Camera Presets ──
+    const VIEWS = {
+      hero:  { pos: [0.31, 0.22, 0.36], target: [0, 0.035, 0] },
+      top:   { pos: [0, 0.55, 0.001],    target: [0, 0.025, 0] },
+      front: { pos: [0, 0.08, 0.40],     target: [0, 0.03, 0] },
+      side:  { pos: [0.45, 0.12, 0],     target: [0, 0.03, 0] },
+    };
+
+    function setView(name) {
+      const v = VIEWS[name];
+      if (!v) return;
+      const startPos = camera.position.clone();
+      const startTarget = controls.target.clone();
+      const endPos = new THREE.Vector3(...v.pos);
+      const endTarget = new THREE.Vector3(...v.target);
+      let t = 0;
+      function animateView() {
+        t += 0.035;
+        if (t >= 1) {
+          camera.position.copy(endPos);
+          controls.target.copy(endTarget);
+          controls.update();
+          return;
+        }
+        const ease = t * t * (3 - 2 * t);
+        camera.position.lerpVectors(startPos, endPos, ease);
+        controls.target.lerpVectors(startTarget, endTarget, ease);
+        controls.update();
+        requestAnimationFrame(animateView);
+      }
+      animateView();
+      document.querySelectorAll('.toolbar button[data-view]').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === name);
+      });
+    }
+
+    setView('hero');
+
+    // ── Load Model ──
+    let mixer, spinning = false;
+    const actions = [];
+
+    new GLTFLoader().load('./Drone_Model.glb', (gltf) => {
+      scene.add(gltf.scene);
+      gltf.scene.traverse(o => {
+        if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+      });
+      mixer = new THREE.AnimationMixer(gltf.scene);
+      for (const clip of gltf.animations) {
+        const action = mixer.clipAction(clip);
+        action.play();
+        action.paused = true;
+        actions.push(action);
+      }
+      document.getElementById('btn-spin').disabled = false;
+      document.getElementById('loading-overlay').classList.add('hidden');
+      document.getElementById('status-bar').textContent =
+        `Model loaded · ${gltf.animations.length} rotor animations · Blender + GLB included`;
+    }, undefined, (err) => {
+      document.getElementById('status-bar').textContent =
+        'Cannot load model — serve this folder with: python -m http.server 8081';
+      document.getElementById('loading-overlay').querySelector('.loader-text').textContent = 'LOAD ERROR';
+      console.error(err);
+    });
+
+    // ── Buttons ──
+    const btnSpin = document.getElementById('btn-spin');
+    btnSpin.onclick = () => {
+      spinning = !spinning;
+      for (const a of actions) a.paused = !spinning;
+      btnSpin.innerHTML = spinning
+        ? '<span class="btn-icon">⏹</span> Stop Propellers'
+        : '<span class="btn-icon">⟳</span> Spin Propellers';
+      btnSpin.classList.toggle('active', spinning);
+    };
+
+    document.getElementById('btn-reset').onclick = () => {
+      setView('hero');
+      controls.autoRotate = true;
+    };
+
+    document.getElementById('btn-capture').onclick = () => {
+      document.body.classList.toggle('capture-mode');
+      document.getElementById('btn-capture').classList.toggle('active', document.body.classList.contains('capture-mode'));
+    };
+
+    document.querySelectorAll('.toolbar button[data-view]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setView(btn.dataset.view);
+        controls.autoRotate = false;
+      });
+    });
+
+    // ── Animation Loop ──
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      mixer?.update(Math.min(clock.getDelta(), 0.05));
+      controls.update();
+      groundRing.material.opacity = 0.03 + Math.sin(clock.elapsedTime * 1.5) * 0.015;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    canvas.addEventListener('pointerdown', () => { controls.autoRotate = false; });
+  </script>
+</body>
+</html>
