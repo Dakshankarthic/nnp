@@ -2,6 +2,9 @@
   "cleanUrls": true,
   "redirects": [
     { "source": "/drone", "destination": "/drone-viewer/", "permanent": false },
-    { "source": "/viewer", "destination": "/drone-viewer/", "permanent": false }
+    { "source": "/viewer", "destination": "/drone-viewer/", "permanent": false },
+    { "source": "/nnp", "destination": "/nnp-dashboard/", "permanent": false },
+    { "source": "/mission-control", "destination": "/nnp-dashboard/", "permanent": false },
+    { "source": "/dashboard", "destination": "/nnp-dashboard/", "permanent": false }
   ]
 }

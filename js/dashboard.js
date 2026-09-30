@@ -19,6 +19,8 @@ export class Dashboard {
     this.opsRouteStatus = document.getElementById('ops-route-status');
     this.opsRouteEta = document.getElementById('ops-route-eta');
     this.opsRouteDistance = document.getElementById('ops-route-distance');
+    this.opsRouteIncline = document.getElementById('ops-route-incline');
+    this.opsRouteCost = document.getElementById('ops-route-cost');
     this.opsRouteTarget = document.getElementById('ops-route-target');
     this.telemetryGps = document.getElementById('telemetry-gps');
     this.telemetryRssi = document.getElementById('telemetry-rssi');
@@ -154,9 +156,11 @@ export class Dashboard {
 
     if (!route) return;
 
-    if (this.opsRouteStatus) this.opsRouteStatus.textContent = 'SAFE ROUTE GENERATED';
+    if (this.opsRouteStatus) this.opsRouteStatus.textContent = 'NNP FUSED ROUTE ACTIVE';
     if (this.opsRouteEta) this.opsRouteEta.textContent = `${route.etaMinutes} MIN`;
     if (this.opsRouteDistance) this.opsRouteDistance.textContent = `${route.distanceMeters} M`;
+    if (this.opsRouteIncline) this.opsRouteIncline.textContent = `${route.maxInclineDeg || 0}°`;
+    if (this.opsRouteCost) this.opsRouteCost.textContent = `${route.costBreakdown?.totalCost || '--'}`;
     if (this.opsRouteTarget) {
       const label = target?.metadata?.label || target?.name || 'HIGHEST PRIORITY SURVIVOR';
       this.opsRouteTarget.textContent = label.toUpperCase();

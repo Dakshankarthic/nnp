@@ -105,6 +105,9 @@
     </div>
 
     <div class="top-right">
+      <a href="nnp-dashboard/" class="top-nav-drone-btn nnp-btn" style="border-color: rgba(110, 231, 183, 0.4); color: #6ee7b7;" title="Open NNP Air-Ground SAR Mission Control">
+        <span>🛰️ NNP MISSION CONTROL</span>
+      </a>
       <a href="drone-viewer/" class="top-nav-drone-btn" title="View interactive 3D Drone Model">
         <span>🛸 3D DRONE MODEL</span>
       </a>
@@ -318,14 +321,18 @@
         </div>
 
         <div class="ops-card">
-          <div class="ops-card-title">GROUND RESCUE ROUTE</div>
+          <div class="ops-card-title">GROUND RESCUE ROUTE (NNP FUSED A*)</div>
           <div class="ops-route-status" id="ops-route-status">AWAITING SURVIVOR LOCK</div>
           <div class="ops-route-grid">
             <div><span>ETA</span><strong id="ops-route-eta">--</strong></div>
             <div><span>DISTANCE</span><strong id="ops-route-distance">--</strong></div>
           </div>
+          <div class="ops-route-grid" style="margin-top: 6px;">
+            <div><span>MAX INCLINE</span><strong id="ops-route-incline">--</strong></div>
+            <div><span>FUSED COST</span><strong id="ops-route-cost">--</strong></div>
+          </div>
           <div class="ops-route-target" id="ops-route-target">NO DISPATCH TARGET SELECTED</div>
-          <button id="btn-dispatch-route" class="btn-dispatch-route">PLAN TRAINING ROUTE</button>
+          <button id="btn-dispatch-route" class="btn-dispatch-route">PLAN NNP FUSED ROUTE</button>
           <button id="btn-demo-run" class="btn-demo-run">START DEMO SCENARIO</button>
         </div>
       </div>
