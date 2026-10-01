@@ -8,7 +8,6 @@
     { "source": "/hexapods", "destination": "/hexapod-viewer/", "permanent": false },
     { "source": "/nnp", "destination": "/nnp-dashboard/", "permanent": false },
     { "source": "/mission-control", "destination": "/nnp-dashboard/", "permanent": false },
-    { "source": "/dashboard", "destination": "/nnp-dashboard/", "permanent": false },
-    { "source": "/reports", "destination": "/reports/architecture-and-flowcharts/flowchart.html", "permanent": false }
+    { "source": "/dashboard", "destination": "/nnp-dashboard/", "permanent": false }
   ]
 }

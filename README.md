@@ -23,7 +23,6 @@
 
 | Destination | Direct Production Link | Overview |
 | :--- | :--- | :--- |
-| **📁 Official Judge Dossier & Reports** | [**`aegisdisasterworld.vercel.app/reports/`**](https://aegisdisasterworld.vercel.app/reports/) | **Executive Evaluation Hub** with 1-click downloads, in-browser PDF reader, and technical specs |
 | **🤖 3D Hexapod Robot Digital Twin** | [**`aegisdisasterworld.vercel.app/hexapod-viewer/`**](https://aegisdisasterworld.vercel.app/hexapod-viewer/) | **Interactive 18-DOF articulated walking UGV** with active gait kinematics and LiDAR sensor payload |
 | **🛸 3D Quadcopter UAV Digital Twin** | [**`aegisdisasterworld.vercel.app/drone-viewer/`**](https://aegisdisasterworld.vercel.app/drone-viewer/) | **Interactive 3D racing-class quadcopter** with spinning rotors, 4 studio camera angles, and specs |
 | **🌐 3D Incident Command Simulation** | [**`aegisdisasterworld.vercel.app/`**](https://aegisdisasterworld.vercel.app/) | **Live 3D landslide disaster world** with 3 search drones, 7 hexapod UGVs, APF geofence, and FLIR thermal |
@@ -281,35 +280,35 @@ $$J(p) = g(p) + h(p) + w_{\text{slope}} \cdot \nabla z(p)^2 + w_{\text{mud}} \cd
 
 ---
 
-## 📁 Slide 9: Project Repository & Documentation Catalog
-
-All formal documentation, research papers, and models have been organized under [`reports/`](https://aegisdisasterworld.vercel.app/reports/):
+## 📁 Slide 9: Project Architecture & Codebase Structure
 
 ```
-reports/
-├── index.html                               # 🌟 Standalone Judge Presentation Hub
-├── README.md                                # Master documentation catalog & index
-│
-├── project-reports/                         # Formal engineering reports (.docx, .txt, .md)
-│   ├── AEGIS-SAR-Report.docx                # Full engineering submission report
-│   ├── Autonomous_Drone_Real_Technology_to_Our_Rescue_Project.docx
-│   ├── Drone_System_Specification.docx      # 220mm racing carbon-frame specs
-│   ├── Chunking_Analysis.docx               # Hierarchical octree & terrain chunking
-│   ├── AEGIS_SAR_Project_Status_Report.md   # Milestone verification report
-│   └── aegis_technical_report_utf8.txt      # Numerical telemetry benchmarks
-│
-├── research-papers-and-analysis/            # Peer-reviewed research (.pdf)
-│   ├── NNP_Neural_Network_Pathfinding_Paper.pdf  # Core NNP pathfinding paper
-│   └── Disaster_Spread_Ranges_and_Drone_Coverage.pdf # Hazard propagation paper
-│
-├── architecture-and-flowcharts/             # Schematics & interactive tools
-│   ├── flowchart.html                       # Interactive operational pipeline tool
-│   ├── technical_approach_flowchart.html    # Interactive ROS 2 / Nav2 dataflow
-│   ├── AEGIS_SAR_Flowchart.jpg              # High-res master schematic image
-│   └── AEGIS_SAR_Full_Flowchart_Architecture.md # Node-by-node architecture spec
-│
-└── archive/                                 # Duplicate backup files
-    └── AEGIS-SAR-Report (1).docx
+aegis_disaster_world/
+├── index.html                   # 🌐 Main 3D Incident Command Simulation & Tactical PFD HUD
+├── drone-viewer/                # 🛸 Interactive 3D Quadcopter UAV Digital Twin
+│   ├── index.html               # WebGL2 viewer with rotor animation & 4 camera presets
+│   └── Drone_Model.glb          # 220mm racing-class airframe model (2.83 MB)
+├── hexapod-viewer/              # 🤖 Interactive 3D Hexapod UGV Digital Twin
+│   ├── index.html               # 18-DOF articulated walking gait simulation
+│   └── Hexapod_Robot.glb        # Titanium-bracketed robotic crawler model (9.15 MB)
+├── nnp-dashboard/               # 🛰️ React + Vite NNP SAR Mission Control Dashboard
+│   ├── index.html               # Production C2 bundle with live telemetry stream
+│   └── assets/                  # Compiled A* pathfinding & costmap UI components
+├── js/                          # Core Simulation Engine
+│   ├── main.js                  # Simulation orchestrator & animation loop
+│   ├── drone.js                 # Kinematic UAV flight controller & waypoints
+│   ├── hexapods.js              # 7× Hexapod fleet & APF Geofence laser curtain
+│   ├── pathfinder.js            # NNP 2.5D Fused Costmap A* pathfinder
+│   ├── sensors.js               # Multi-modal sensor simulation (RGB, FLIR, Audio)
+│   ├── thermal.js               # FLIR LWIR microbolometer renderer
+│   ├── detection.js             # Deterministic + ML dual-path detection pipeline
+│   ├── hazard_propagation.js    # Finite landslide runout & mudflow physics
+│   └── dashboard.js             # C2 telemetry HUD, incident ledger & triage queue
+├── css/                         # Defense-Grade HUD & Simulation Styling
+│   ├── style.css                # Tactical UI dark theme & glassmorphism
+│   └── simulation.css           # Viewport overlays, scanlines & PFD ladder
+└── tests/                       # Automated Regression Suite
+    └── simulation.test.mjs      # 6 headless Three.js unit tests
 ```
 
 ---
@@ -333,7 +332,6 @@ python -m http.server 8080
 * 🛸 **3D Drone Viewer:** `http://localhost:8080/drone-viewer/`
 * 🤖 **3D Hexapod Viewer:** `http://localhost:8080/hexapod-viewer/`
 * 🛰️ **NNP Mission Control:** `http://localhost:8080/nnp-dashboard/`
-* 📁 **Judge Showcase & Reports:** `http://localhost:8080/reports/`
 
 ### 3. Automated Regression Verification
 ```bash
