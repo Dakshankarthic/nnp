@@ -1,4 +1,4 @@
-# AEGIS-SAR: AI-Powered Autonomous Search & Rescue System
+# NNP-SAR: AI-Powered Autonomous Search & Rescue System
 ## Complete System Architecture & Operational Flowchart Specification
 **Problem Statement ID:** 26177  
 **Problem Statement Title:** A deployable AI-powered autonomous drone that aids search-and-rescue operations by detecting people and hazards, thereby improving responder safety and reducing victim discovery time.  
@@ -207,7 +207,7 @@ flowchart TD
 
 ---
 
-## 6. How this Flowchart Maps Directly to the AEGIS Codebase
+## 6. How this Flowchart Maps Directly to the NNP Codebase
 
 1. **Hazard Classification:** Implemented in `js/scene.js` (debris, flame emitter, 115kV transmission pylon, flash flood) and validated in `demo_pipeline_live.py`.
 2. **Geo-Annotation (GPS):** Implemented in `js/dashboard.js` and `js/drone.js` with simulated 3D-RTK GPS fix and WGS84 coordinate projections.

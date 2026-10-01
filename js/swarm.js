@@ -1,5 +1,5 @@
 /**
- * swarm.js — AEGIS-SAR Swarm Coordinator
+ * swarm.js — NNP-SAR Swarm Coordinator
  * Multiple autonomous drones with frontier-based exploration,
  * mesh network visualization, and coverage heatmap.
  * Matches Section 7 & 13 of the report.
@@ -43,7 +43,7 @@ export class SwarmCoordinator {
 
   _createSwarmDrones() {
     const colors = [0xa855f7, 0x00ff88];
-    const names = ['AEGIS-2', 'AEGIS-3'];
+    const names = ['NNP-2', 'NNP-3'];
 
     for (let i = 0; i < 2; i++) {
       const drone = new Drone(this.scene, names[i], colors[i]);

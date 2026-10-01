@@ -1,5 +1,5 @@
 /**
- * scene.js — AEGIS-SAR Defense-Grade Real-Time Mountain Landslide Disaster Simulation
+ * scene.js — NNP-SAR Defense-Grade Real-Time Mountain Landslide Disaster Simulation
  * Photorealistic alpine disaster environment:
  * - 360° Jagged distant mountain perimeter (eliminating empty voids)
  * - Atmospheric daylight overcast sky dome & harmonized Rayleigh fog

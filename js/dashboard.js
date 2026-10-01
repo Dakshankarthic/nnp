@@ -1,5 +1,5 @@
 /**
- * dashboard.js — AEGIS-SAR Tactical Command & Control (C2) Dashboard
+ * dashboard.js — NNP-SAR Tactical Command & Control (C2) Dashboard
  * High-density situational awareness ledger, multi-sensor fusion audit,
  * triage queue prioritization, swarm constellation monitoring, and mission reporting.
  */
@@ -306,7 +306,7 @@ export class Dashboard {
 
       card.innerHTML = `
         <div class="target-card-header">
-          <span class="target-id-badge">${trackId} // ${det.sourceDrone || 'AEGIS-1'}</span>
+          <span class="target-id-badge">${trackId} // ${det.sourceDrone || 'NNP-1'}</span>
           <span class="target-route-tag ${routeTagClass}">${routeTagText}</span>
         </div>
         <div class="target-card-body">
@@ -399,14 +399,14 @@ export class Dashboard {
     this.droneList.appendChild(aerialHeader);
 
     const roles = {
-      'AEGIS-1': 'Lead scout / EO-IR mapping',
-      'AEGIS-2': 'Thermal sweep / sector coverage',
-      'AEGIS-3': 'Relay node / gas sampling',
+      'NNP-1': 'Lead scout / EO-IR mapping',
+      'NNP-2': 'Thermal sweep / sector coverage',
+      'NNP-3': 'Relay node / gas sampling',
     };
 
     for (const st of statuses) {
       const card = document.createElement('div');
-      card.className = `drone-status-card ${st.id === 'AEGIS-1' ? 'lead' : ''}`;
+      card.className = `drone-status-card ${st.id === 'NNP-1' ? 'lead' : ''}`;
       const role = roles[st.id] || 'AUXILIARY SWARM NODE';
 
       card.innerHTML = `
@@ -471,7 +471,7 @@ export class Dashboard {
   exportTacticalReport() {
     const report = {
       missionHeader: {
-        system: "AEGIS-SAR Incident Command Simulation",
+        system: "NNP-SAR Incident Command Simulation",
         classification: "Training simulation",
         incidentType: "Landslide response with fire and flood risk",
         timestampUTC: new Date().toISOString(),
@@ -501,7 +501,7 @@ export class Dashboard {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `AEGIS_SAR_Incident_Report_${Date.now()}.json`;
+    a.download = `NNP_SAR_Incident_Report_${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

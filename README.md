@@ -1,4 +1,4 @@
-# AEGIS-SAR — Landslide training simulation
+# NNP-SAR — Landslide training simulation
 
 A locally runnable Three.js search-and-rescue scenario with procedural terrain,
 three simulated drones, synthetic sensor feeds and an incident dashboard.

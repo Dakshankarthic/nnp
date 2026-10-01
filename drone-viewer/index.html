@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AEGIS-SAR Drone — Interactive 3D model viewer with photo-guided construction">
-  <title>AEGIS-SAR | Drone 3D Model</title>
+  <meta name="description" content="NNP-SAR Drone — Interactive 3D model viewer with photo-guided construction">
+  <title>NNP-SAR | Drone 3D Model</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -453,7 +453,7 @@
   <!-- Top Header -->
   <header>
     <div class="brand">
-      <span class="brand-eyebrow">AEGIS-SAR / HARDWARE PLATFORM</span>
+      <span class="brand-eyebrow">NNP-SAR / HARDWARE PLATFORM</span>
       <h1 class="brand-title">Quadcopter</h1>
       <p class="brand-sub">Photo-guided 3D model · Drag to rotate · Scroll to zoom</p>
     </div>
@@ -572,7 +572,7 @@
       OrbitControls = oc.OrbitControls;
       GLTFLoader = gltf.GLTFLoader;
     } catch (cdnErr) {
-      console.warn('[AEGIS 3D] CDN import failed, attempting local vendor...', cdnErr);
+      console.warn('[NNP 3D] CDN import failed, attempting local vendor...', cdnErr);
       try {
         // 2. Fallback: Load Three.js from local vendor folder
         THREE = await import('three-local');
@@ -581,7 +581,7 @@
         OrbitControls = oc.OrbitControls;
         GLTFLoader = gltf.GLTFLoader;
       } catch (localErr) {
-        console.error('[AEGIS 3D] All module loaders failed:', localErr);
+        console.error('[NNP 3D] All module loaders failed:', localErr);
         document.getElementById('loading-overlay').innerHTML = `
           <div style="background:rgba(12,18,26,0.95);border:1px solid #ff4466;border-radius:12px;padding:24px;text-align:center;max-width:400px;color:#fff;">
             <h3 style="color:#ff4466;margin-bottom:10px;">Three.js Engine Load Error</h3>
@@ -748,7 +748,7 @@
 
     function loadModelWithFallback(urls, index = 0) {
       if (index >= urls.length) {
-        console.warn('[AEGIS 3D] All network paths failed. Displaying local file fallback.');
+        console.warn('[NNP 3D] All network paths failed. Displaying local file fallback.');
         document.getElementById('status-bar').textContent =
           'Network fetch restricted. Select Drone_Model.glb or drag it into this window to view.';
         const overlay = document.getElementById('loading-overlay');
@@ -779,7 +779,7 @@
       }
 
       const url = urls[index];
-      console.log(`[AEGIS 3D] Trying model candidate ${index + 1}/${urls.length}: ${url}`);
+      console.log(`[NNP 3D] Trying model candidate ${index + 1}/${urls.length}: ${url}`);
       new GLTFLoader().load(
         url,
         (gltf) => {
@@ -787,7 +787,7 @@
         },
         undefined,
         (err) => {
-          console.warn(`[AEGIS 3D] Candidate ${url} failed:`, err);
+          console.warn(`[NNP 3D] Candidate ${url} failed:`, err);
           loadModelWithFallback(urls, index + 1);
         }
       );

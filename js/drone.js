@@ -1,5 +1,5 @@
 /**
- * drone.js — AEGIS-SAR Drone Controller
+ * drone.js — NNP-SAR Drone Controller
  * Quadcopter mesh with spinning rotors, two flight modes
  * (manual WASD + autonomous patrol), camera frustum, and battery sim.
  */
@@ -15,7 +15,7 @@ const DEFAULT_ALTITUDE = 8;    // m
 const ROTOR_SPEED = 25;        // rad/s
 
 export class Drone {
-  constructor(scene, id = 'AEGIS-1', color = 0x00d4ff) {
+  constructor(scene, id = 'NNP-1', color = 0x00d4ff) {
     this.id = id;
     this.scene = scene;
     this.color = color;
@@ -61,7 +61,7 @@ export class Drone {
     this._buildTrail();
 
     // Input handlers
-    if (id === 'AEGIS-1') this._setupInput();
+    if (id === 'NNP-1') this._setupInput();
     this.simTime = 0;
   }
 

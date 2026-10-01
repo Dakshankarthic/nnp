@@ -1,5 +1,5 @@
 /**
- * detection.js — AEGIS-SAR Hybrid Deterministic + ML Detection Pipeline
+ * detection.js — NNP-SAR Hybrid Deterministic + ML Detection Pipeline
  * Implements Section 4's dual-path classification: every detection runs
  * through BOTH a deterministic rule engine AND an ML confidence scorer,
  * and agreement/disagreement itself becomes the routing signal.

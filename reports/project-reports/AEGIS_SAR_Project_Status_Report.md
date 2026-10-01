@@ -1,4 +1,4 @@
-# AEGIS-SAR — SIH Project Status Report
+# NNP-SAR — SIH Project Status Report
 **Problem Statement ID:** 26177
 **Organization:** Qualcomm Inc
 **Team:** NNP — B.E. Electronics and Communication Engineering
@@ -28,12 +28,12 @@
 | File | Key Features Implemented | Status |
 |---|---|---|
 | `js/drone.js` | Hexacopter mesh, manual WASD flight, autonomous waypoint patrol, camera frustum, battery sim, terrain-following | COMPLETE |
-| `js/swarm.js` | 3-drone swarm: AEGIS-1/2/3, frontier patrol, ESP-NOW mesh visualization with RSSI link coloring, coverage heatmap | COMPLETE |
+| `js/swarm.js` | 3-drone swarm: NNP-1/2/3, frontier patrol, ESP-NOW mesh visualization with RSSI link coloring, coverage heatmap | COMPLETE |
 
 Swarm patrol zones defined:
-- AEGIS-1: Primary (manual or auto)
-- AEGIS-2: Northeast sector autonomous
-- AEGIS-3: Northwest sector autonomous
+- NNP-1: Primary (manual or auto)
+- NNP-2: Northeast sector autonomous
+- NNP-3: Northwest sector autonomous
 
 ---
 
@@ -83,11 +83,11 @@ Live output already produces:
 
 | File | Content | Status |
 |---|---|---|
-| `AEGIS_SAR_Full_Flowchart_Architecture.md` | Full mermaid flowcharts, block-by-block architecture, Qualcomm hardware table, codebase mapping | COMPLETE |
+| `NNP_SAR_Full_Flowchart_Architecture.md` | Full mermaid flowcharts, block-by-block architecture, Qualcomm hardware table, codebase mapping | COMPLETE |
 | `aegis_report_utf8.txt` | 14-section engineering report: Executive Summary, Architecture, Hybrid Detection, Swarm, Triage, Dashboard, BOM, Roadmap, Tier-2 Extensions, Autonomy Stack | COMPLETE |
 | `flowchart.html` | Interactive HTML flowchart of full operational pipeline | COMPLETE |
 | `technical_approach_flowchart.html` | Detailed technical approach visualization | COMPLETE |
-| `AEGIS-SAR-Report (1).docx` | Full Word document submission report | COMPLETE |
+| `NNP-SAR-Report (1).docx` | Full Word document submission report | COMPLETE |
 
 ---
 
@@ -118,7 +118,7 @@ Lon = Lon_ref + (x / (R_Earth x cos(Lat_ref))) x (180/pi)
 
 ### 2.2 MISSING — Predictive Hazard Propagation (Cellular Automaton)
 
-Why: Instead of showing where fire/flood is NOW, AEGIS predicts where it will be in 15/30/60 minutes.
+Why: Instead of showing where fire/flood is NOW, NNP predicts where it will be in 15/30/60 minutes.
 
 Files to build:
 - [ ] `js/hazard_propagation.js` — 2D cellular automaton: fire spread (wind vector + fuel density), flood inundation (DEM gradient), time projections: Now / +15 min / +30 min / +60 min
@@ -214,7 +214,7 @@ Files to build:
 
 ## 3. SIH Abstract — Ready to Submit (Copy and Paste)
 
-AEGIS-SAR (Acoustic-Enhanced, Gas-aware, Infrared-fused Swarm for Autonomous Rescue) is a deployable AI-powered autonomous hexacopter drone swarm for real-time search-and-rescue in Indian disaster scenarios including landslides, floods, cyclones, and urban collapse. Running entirely on-device using the Qualcomm Robotics RB5 platform and Qualcomm SNPE INT8-quantized YOLOv8-Pose models (45 FPS, less than 12W), AEGIS-SAR fuses four independent sensing modalities: RGB optical pose detection, LWIR thermal imaging (discriminating human 310 K from false positives), 4-mic MEMS acoustic beamforming (locating buried survivors by vocalization), and UWB/FMCW bio-radar (detecting thoracic respiration through 2 meters of non-metallic rubble). A novel hexapod-based Ground Control Point system replaces unreliable satellite GPS with a plus or minus 2.5 cm UWB pseudolite network, enabling sub-centimeter disaster orthomosaic mapping. Every detection is scored by a transparent, auditable triage formula (P1/P2/P3), not a black box. Three autonomous drones coordinate via ESP-NOW and LoRa mesh with zero cloud dependency. A live WebGL Tactical C2 Dashboard provides geo-tagged survivor markers, hazard polygons, safe rescue routes via A-star pathfinding, and one-click incident report export, fully functional offline.
+NNP-SAR (Acoustic-Enhanced, Gas-aware, Infrared-fused Swarm for Autonomous Rescue) is a deployable AI-powered autonomous hexacopter drone swarm for real-time search-and-rescue in Indian disaster scenarios including landslides, floods, cyclones, and urban collapse. Running entirely on-device using the Qualcomm Robotics RB5 platform and Qualcomm SNPE INT8-quantized YOLOv8-Pose models (45 FPS, less than 12W), NNP-SAR fuses four independent sensing modalities: RGB optical pose detection, LWIR thermal imaging (discriminating human 310 K from false positives), 4-mic MEMS acoustic beamforming (locating buried survivors by vocalization), and UWB/FMCW bio-radar (detecting thoracic respiration through 2 meters of non-metallic rubble). A novel hexapod-based Ground Control Point system replaces unreliable satellite GPS with a plus or minus 2.5 cm UWB pseudolite network, enabling sub-centimeter disaster orthomosaic mapping. Every detection is scored by a transparent, auditable triage formula (P1/P2/P3), not a black box. Three autonomous drones coordinate via ESP-NOW and LoRa mesh with zero cloud dependency. A live WebGL Tactical C2 Dashboard provides geo-tagged survivor markers, hazard polygons, safe rescue routes via A-star pathfinding, and one-click incident report export, fully functional offline.
 
 ---
 

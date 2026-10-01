@@ -1,5 +1,5 @@
 /**
- * main.js — AEGIS-SAR Defense-Grade Tactical Operations Application
+ * main.js — NNP-SAR Defense-Grade Tactical Operations Application
  * Orchestrates rendering, Primary Flight Display (PFD) HUD, tactical target
  * projection, FLIR thermal imaging, swarm telemetry, and mission management.
  */
@@ -126,7 +126,7 @@ function init() {
   createDisasterScene(scene);
 
   // Primary drone
-  primaryDrone = new Drone(scene, 'AEGIS-1', 0x00c8ff);
+  primaryDrone = new Drone(scene, 'NNP-1', 0x00c8ff);
   primaryDrone.position.set(0, 14, 0);
   primaryDrone.mode = 'autonomous';
 
