@@ -4,18 +4,17 @@
 
 ### *Next-Generation Autonomous Disaster Response System for Rapid Survivor Discovery & Hazard Triangulation*
 
-[![Qualcomm PS 26177](https://img.shields.io/badge/Qualcomm-Problem%20Statement%2026177-3253DC?style=for-the-badge&logo=qualcomm&logoColor=white)](#-problem-statement--the-challenge)
 [![Team NNP](https://img.shields.io/badge/Team-NNP%20ECE-00c8ff?style=for-the-badge)](#-team--institutional-profile)
 [![Live Vercel Production](https://img.shields.io/badge/Vercel-Live%20Production%20Deployment-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://aegisdisasterworld.vercel.app/)
 [![Three.js](https://img.shields.io/badge/Three.js-r170%20WebGL2-black?style=for-the-badge&logo=three.js)](https://aegisdisasterworld.vercel.app/)
 [![React](https://img.shields.io/badge/React-18%20Vite%20C2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://aegisdisasterworld.vercel.app/nnp-dashboard/)
-[![ROS 2](https://img.shields.io/badge/ROS%202-Nav2%20Costmap-22314E?style=for-the-badge&logo=ros&logoColor=white)](https://aegisdisasterworld.vercel.app/reports/)
+[![ROS 2](https://img.shields.io/badge/ROS%202-Nav2%20Costmap-22314E?style=for-the-badge&logo=ros&logoColor=white)](https://aegisdisasterworld.vercel.app/)
 
 <br/>
 
 **Institution:** Velammal College of Engineering and Technology (Autonomous), Madurai  
 **Department:** Electronics and Communication Engineering  
-**Theme:** Robotics and Drones | **Category:** Hardware | **Organization:** Qualcomm Inc.
+**Theme:** Robotics and Drones | **Category:** Hardware
 
 ---
 
@@ -52,7 +51,7 @@
 
 ## 🎯 Slide 1: Problem Statement & The Disaster Dilemma
 
-### **Qualcomm Problem Statement ID:** `26177`
+### **Problem Statement:**
 > *"A deployable AI-powered autonomous drone that aids search-and-rescue operations by detecting people and hazards, thereby improving responder safety and reducing victim discovery time."*
 
 ```
@@ -123,7 +122,7 @@ flowchart TD
     classDef decision fill:#3f2a14,stroke:#ffaa00,stroke-width:2px,color:#f8fafc;
     classDef output fill:#450a0a,stroke:#f43f5e,stroke-width:2px,color:#f8fafc;
 
-    START(["Mission Ignition & Autonomous Launch\n(Qualcomm RB5 / PX4 Autopilot)"]):::startEnd
+    START(["Mission Ignition & Autonomous Launch\n(RB5 Edge AI / PX4 Autopilot)"]):::startEnd
     HAZARD_SCAN["Hazard Classification & Initial Sweep\n• Visual SLAM + LiDAR Obstacle Avoidance\n• Structural Failure & Unstable Slope Assessment\n• Downed 115kV Line & Active Mudflow Detection"]:::process
     START --> HAZARD_SCAN
 
@@ -133,7 +132,7 @@ flowchart TD
     DEPLOY["Deployable Robotic Units\n• Primary Autonomous UAV Quadcopter Swarm (Air Recon)\n• 7× Subordinate Ground Hexapod Robots (Rubble Penetration)"]:::process
     GEO_MAP --> DEPLOY
 
-    DETECTION_BASE["Detection Base Analysis Engine\n(On-Device Qualcomm NPU Edge Inference)"]:::ai
+    DETECTION_BASE["Detection Base Analysis Engine\n(On-Device NPU Edge Inference)"]:::ai
     DEPLOY --> DETECTION_BASE
 
     SENS_OPT["Branch A: Optical & Thermal Pod\n• 4K EO Camera (YOLOv8-Pose)\n• FLIR LWIR 8-14μm Microbolometer (310K Body Heat)\n• Dual-Stream Thermal Saliency"]:::sensor
@@ -232,7 +231,7 @@ $$J(p) = g(p) + h(p) + w_{\text{slope}} \cdot \nabla z(p)^2 + w_{\text{mud}} \cd
 ### 🛸 Autonomous Quadcopter UAV ([Open 3D Viewer](https://aegisdisasterworld.vercel.app/drone-viewer/))
 * **Motor Diagonal**: 220 mm (5" racing-class carbon fiber X-frame).
 * **Propulsion**: 4× Brushless motors with 5" tri-blade propellers (~127 mm diameter).
-* **Avionics & Compute**: Qualcomm RB5 Edge AI Kit + PX4 Autopilot + RTK GNSS (±2 cm).
+* **Avionics & Compute**: RB5 Edge AI Kit + PX4 Autopilot + RTK GNSS (±2 cm).
 * **Sensor Payload**: 4K Optical Sensor + FLIR Boson LWIR + 4-Mic Audio Array.
 * **Camera Views in Viewer**: Hero, Top-Down, Front Gimbal, Side Profile.
 
@@ -273,7 +272,7 @@ $$J(p) = g(p) + h(p) + w_{\text{slope}} \cdot \nabla z(p)^2 + w_{\text{mud}} \cd
 | Capability | Target Metric | Achieved Simulation Benchmark | Status |
 | :--- | :--- | :--- | :--- |
 | **Survivor Discovery Time** | $< 15\text{ minutes}$ | **$4\text{ min } 12\text{ sec}$** (full sector sweep) | ✅ EXCEEDED |
-| **Edge Inference Latency** | $< 50\text{ ms}$ | **$28.4\text{ ms}$** (Qualcomm SNPE NPU pipeline) | ✅ EXCEEDED |
+| **Edge Inference Latency** | $< 50\text{ ms}$ | **$28.4\text{ ms}$** (SNPE NPU pipeline) | ✅ EXCEEDED |
 | **False Positive Rejection** | $> 85\%$ | **$93.2\%$** (Sun-warmed rocks & engines rejected) | ✅ EXCEEDED |
 | **Hexapod Obstacle Step-Over** | $> 0.30\text{ m}$ | **$0.40\text{ m}$** boulder clearance | ✅ EXCEEDED |
 | **Swarm Coverage Rate** | $> 1.0\text{ km}^2/\text{hr}$ | **$1.85\text{ km}^2/\text{hr}$** (3-UAV synchronized sweep) | ✅ EXCEEDED |
@@ -346,11 +345,10 @@ node --experimental-loader ./tests/three-loader.mjs --test tests/simulation.test
 * **Team Name:** **Team NNP**
 * **Department:** Department of Electronics and Communication Engineering (ECE)
 * **Institution:** **Velammal College of Engineering and Technology (Autonomous)**, Madurai, Tamil Nadu, India
-* **Problem Statement:** Qualcomm Inc. — Problem Statement `26177`
 * **Repository:** [https://github.com/Dakshankarthic/nnp.git](https://github.com/Dakshankarthic/nnp.git)
 
 ---
 
 <div align="center">
-  <sub>Built with precision by Team NNP for Smart India Hackathon & Qualcomm Inc. · All rights reserved © 2026</sub>
+  <sub>Built with precision by Team NNP · All rights reserved © 2026</sub>
 </div>
