@@ -8,11 +8,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <base href="./">
+  <script>
+    // Ensure proper path resolution for subdirectories on static hosts
+    if (window.location.pathname.endsWith('/hexapod-viewer')) {
+      window.history.replaceState(null, '', window.location.pathname + '/' + window.location.search + window.location.hash);
+    }
+  </script>
   <script type="importmap">
   {
     "imports": {
-      "three": "./viewer/vendor/three.module.js",
-      "three/addons/": "./viewer/vendor/"
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/",
+      "three-local": "./viewer/vendor/three.module.js",
+      "three-local/addons/": "./viewer/vendor/"
     }
   }
   </script>
@@ -516,9 +525,34 @@
   </div>
 
   <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    let THREE, OrbitControls, GLTFLoader;
+    try {
+      // 1. Primary: Load Three.js and addons from high-availability CDN
+      THREE = await import('three');
+      const oc = await import('three/addons/controls/OrbitControls.js');
+      const gltf = await import('three/addons/loaders/GLTFLoader.js');
+      OrbitControls = oc.OrbitControls;
+      GLTFLoader = gltf.GLTFLoader;
+    } catch (cdnErr) {
+      console.warn('[AEGIS 3D] CDN import failed, attempting local vendor...', cdnErr);
+      try {
+        // 2. Fallback: Load Three.js from local vendor folder
+        THREE = await import('three-local');
+        const oc = await import('three-local/addons/controls/OrbitControls.js');
+        const gltf = await import('three-local/addons/loaders/GLTFLoader.js');
+        OrbitControls = oc.OrbitControls;
+        GLTFLoader = gltf.GLTFLoader;
+      } catch (localErr) {
+        console.error('[AEGIS 3D] All module loaders failed:', localErr);
+        document.getElementById('loading-overlay').innerHTML = `
+          <div style="background:rgba(8,12,16,0.95);border:1px solid #00ffaa;border-radius:12px;padding:24px;text-align:center;max-width:400px;color:#fff;">
+            <h3 style="color:#00ffaa;margin-bottom:10px;">Three.js Engine Load Error</h3>
+            <p style="font-size:13px;color:#8aa098;line-height:1.5;">Browser could not resolve Three.js modules. Please ensure you are connected to the internet or serving via local HTTP server.</p>
+            <p style="font-size:11px;color:#00ffaa;margin-top:10px;font-family:monospace;">${localErr.message}</p>
+          </div>`;
+        throw localErr;
+      }
+    }
 
     // ── Renderer ──
     const canvas = document.getElementById('viewer-canvas');
@@ -639,7 +673,7 @@
     let mixer, animating = true;
     const actions = [];
 
-    new GLTFLoader().load('./Hexapod_Robot.glb', (gltf) => {
+    function onModelLoaded(gltf) {
       scene.add(gltf.scene);
       gltf.scene.traverse(o => {
         if (o.isMesh) {
@@ -659,12 +693,83 @@
       document.getElementById('loading-overlay').classList.add('hidden');
       document.getElementById('status-bar').textContent =
         `Model loaded · 858 objects · ${gltf.animations.length} joint animations active · Blender + GLB ready`;
-    }, undefined, (err) => {
-      document.getElementById('status-bar').textContent =
-        'Cannot load model — verify Hexapod_Robot.glb location';
-      document.getElementById('loading-overlay').querySelector('.loader-text').textContent = 'LOAD ERROR';
-      console.error(err);
+    }
+
+    function loadFromBlob(file) {
+      const blobUrl = URL.createObjectURL(file);
+      new GLTFLoader().load(blobUrl, (gltf) => {
+        URL.revokeObjectURL(blobUrl);
+        onModelLoaded(gltf);
+      }, undefined, (err) => {
+        alert('Failed to parse 3D file: ' + err.message);
+      });
+    }
+
+    const candidateUrls = [
+      new URL('Hexapod_Robot.glb', window.location.href.split('?')[0].replace(/\/?$/, '/')).href,
+      './Hexapod_Robot.glb',
+      'Hexapod_Robot.glb',
+      '/hexapod-viewer/Hexapod_Robot.glb'
+    ];
+
+    function loadModelWithFallback(urls, index = 0) {
+      if (index >= urls.length) {
+        console.warn('[AEGIS 3D] All network paths failed. Displaying local file fallback.');
+        document.getElementById('status-bar').textContent =
+          'Network fetch restricted. Select Hexapod_Robot.glb or drag it into this window to view.';
+        const overlay = document.getElementById('loading-overlay');
+        overlay.innerHTML = `
+          <div style="background: rgba(12, 18, 26, 0.96); border: 1px solid rgba(0, 255, 170, 0.4); border-radius: 14px; padding: 32px 28px; text-align: center; max-width: 440px; color: #e8f5f0; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+            <div style="font-size: 38px; margin-bottom: 12px;">🤖</div>
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #00ffaa;">Hexapod UGV 3D Model</h3>
+            <p style="font-size: 13px; color: #8aa098; margin-bottom: 20px; line-height: 1.5;">
+              Direct network fetch was blocked (e.g. strict CORS or file:// protocol). Select <strong>Hexapod_Robot.glb</strong> to view instantly:
+            </p>
+            <label style="display: inline-block; background: linear-gradient(135deg, #00ffaa, #00b4d8); color: #080c10; font-weight: 700; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 13px; letter-spacing: 0.5px;">
+              📂 BROWSE HEXAPOD_ROBOT.GLB
+              <input type="file" id="model-file-input" accept=".glb,.gltf" style="display:none;">
+            </label>
+            <p style="font-size: 11px; color: #4e635c; margin-top: 14px;">Or simply drag and drop <code>Hexapod_Robot.glb</code> anywhere on this page</p>
+          </div>`;
+        overlay.classList.remove('hidden');
+
+        const fileInput = document.getElementById('model-file-input');
+        if (fileInput) {
+          fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+              loadFromBlob(e.target.files[0]);
+            }
+          });
+        }
+        return;
+      }
+
+      const url = urls[index];
+      console.log(`[AEGIS 3D] Trying model candidate ${index + 1}/${urls.length}: ${url}`);
+      new GLTFLoader().load(
+        url,
+        (gltf) => {
+          onModelLoaded(gltf);
+        },
+        undefined,
+        (err) => {
+          console.warn(`[AEGIS 3D] Candidate ${url} failed:`, err);
+          loadModelWithFallback(urls, index + 1);
+        }
+      );
+    }
+
+    // Drag & drop support
+    window.addEventListener('dragover', (e) => { e.preventDefault(); });
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        loadFromBlob(e.dataTransfer.files[0]);
+      }
     });
+
+    // Start model loading
+    loadModelWithFallback(candidateUrls, 0);
 
     // ── Buttons ──
     const btnAnimate = document.getElementById('btn-animate');

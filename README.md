@@ -20,7 +20,7 @@ MIT license. There are no CDN/font requests or npm build steps.
 
 - Starts in autonomous search with an orbitable reconnaissance view.
 - Drag to orbit, right-drag to pan, scroll to zoom in RECON.
-- CHASE follows the primary aircraft; FPV uses its forward camera.
+- CHASE follows the primary aircraft; FORWARD CAM uses its forward camera.
 - MANUAL: click the scene for mouse control; Escape releases the mouse.
   W/A/S/D move, Q/E climb/descend. Space pauses, R restarts, T changes thermal palette.
 - Pause, Restart and Focus view also have visible buttons.
@@ -75,3 +75,15 @@ medical triage, link reliability, or field-safe routes.
 The files in `aegis_disaster_world/` are a **separate** Gazebo/PX4 starting point.
 The browser does not establish a MAVLink/PX4 connection. The existing Gazebo
 world and pipeline were not modified or validated by this browser update.
+
+## Project Structure & Applications
+
+- **Main Incident Simulation**: `index.html` (Procedural landslide world, 3 drones, 7 hexapod UGVs, APF Geofence curtain, FLIR thermal, Nav2 fused costmap)
+- **3D Drone Model Viewer**: `drone-viewer/` (Interactive 3D quadcopter model with rotor spin, 4 camera presets, and photo-guided carbon chassis)
+- **3D Hexapod UGV Viewer**: `hexapod-viewer/` (Interactive 18-DOF articulated walking robot model with gait kinematics and robotics specs)
+- **NNP SAR Mission Control**: `nnp-dashboard/` (Air-ground coordination dashboard, agent telemetry, dynamic hazard alerts, and costmap pathfinding)
+- **Documentation & Reports**: `reports/`
+  - `reports/project-reports/`: Formal Word documents (.docx), technical specifications, and status logs
+  - `reports/research-papers-and-analysis/`: Neural Network Pathfinding (.pdf) and hazard runout range papers
+  - `reports/architecture-and-flowcharts/`: High-resolution system flowcharts (.jpg, .html) and node architecture breakdowns
+  - `reports/archive/`: Traceability archive and duplicate document backups
